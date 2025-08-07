@@ -1,0 +1,4 @@
+name: mineSystemPlugin
+version: '1.0-SNAPSHOT'
+main: org.maks.mineSystemPlugin.MineSystemPlugin
+api-version: '1.20'

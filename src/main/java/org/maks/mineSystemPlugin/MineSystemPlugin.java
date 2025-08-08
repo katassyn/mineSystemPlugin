@@ -1,17 +1,19 @@
 package org.maks.mineSystemPlugin;
 
 import org.bukkit.plugin.java.JavaPlugin;
+import org.maks.mineSystemPlugin.listener.OreBreakListener;
 
-public final class MineSystemPlugin extends JavaPlugin {
+public class MineSystemPlugin extends JavaPlugin {
+
+    private int globalOreCount = 0;
 
     @Override
     public void onEnable() {
-        // Plugin startup logic
-
+        getServer().getPluginManager().registerEvents(new OreBreakListener(this), this);
     }
 
-    @Override
-    public void onDisable() {
-        // Plugin shutdown logic
+    public int incrementOreCount() {
+        return ++globalOreCount;
     }
 }
+

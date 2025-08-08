@@ -1,0 +1,20 @@
+mysql:
+  host: localhost
+  port: 3306
+  database: minesystem
+  username: root
+  password: password
+
+# Default configuration for MineSystemPlugin
+maxStamina: 100
+sphereLimit: 20
+baseRepairCost: 32
+baseEnchantCost: 64
+
+# Example MythicMob spawn entries used when generating a sphere with mobs.
+mobSpawns:
+  example:
+    id: ExampleMob
+    amount: 3
+    weight: 1
+

@@ -3,3 +3,10 @@ mobs:
     - name: ExampleMob
       mythic_id: example_id
       amount: 3
+
+database:
+  host: localhost
+  port: 3306
+  name: minesystem
+  user: root
+  password: password

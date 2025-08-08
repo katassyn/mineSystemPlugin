@@ -15,10 +15,14 @@ public class DatabaseManager {
     private final ExecutorService executor = Executors.newFixedThreadPool(10);
 
     public DatabaseManager(JavaPlugin plugin) {
+        var cfg = plugin.getConfig().getConfigurationSection("database");
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:mysql://localhost:3306/minesystem");
-        config.setUsername("root");
-        config.setPassword("password");
+        String host = cfg.getString("host", "localhost");
+        int port = cfg.getInt("port", 3306);
+        String db = cfg.getString("name", "minesystem");
+        config.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + db);
+        config.setUsername(cfg.getString("user", "root"));
+        config.setPassword(cfg.getString("password", ""));
         config.setMaximumPoolSize(10);
         config.setConnectionTestQuery("SELECT 1");
         this.dataSource = new HikariDataSource(config);

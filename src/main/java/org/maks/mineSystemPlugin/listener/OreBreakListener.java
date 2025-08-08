@@ -1,6 +1,5 @@
 package org.maks.mineSystemPlugin.listener;
 
-import io.lumine.mythic.bukkit.MythicBukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -17,7 +16,8 @@ import java.util.Random;
 
 public class OreBreakListener implements Listener {
 
-    private static final List<String> ORE_REWARDS = Arrays.asList("ore_I", "ore_II", "ore_III");
+    private static final List<Material> ORE_REWARDS =
+            Arrays.asList(Material.COAL, Material.IRON_INGOT, Material.DIAMOND);
 
     private final MineSystemPlugin plugin;
     private final Random random = new Random();
@@ -40,18 +40,12 @@ public class OreBreakListener implements Listener {
 
         for (ItemStack drop : drops) {
             block.getWorld().dropItemNaturally(block.getLocation(), drop);
-            if (random.nextDouble() < 0.10) {
-                block.getWorld().dropItemNaturally(block.getLocation(), drop.clone());
-            }
         }
 
         int total = plugin.incrementOreCount();
         if (total % 20 == 0) {
-            String rewardName = ORE_REWARDS.get(random.nextInt(ORE_REWARDS.size()));
-            ItemStack reward = MythicBukkit.inst().getItemManager().getItemStack(rewardName);
-            if (reward != null) {
-                block.getWorld().dropItemNaturally(block.getLocation(), reward);
-            }
+            Material rewardMat = ORE_REWARDS.get(random.nextInt(ORE_REWARDS.size()));
+            block.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(rewardMat));
         }
     }
 }

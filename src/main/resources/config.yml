@@ -1,3 +1,9 @@
+mysql:
+  host: localhost
+  port: 3306
+  database: minecraft
+  username: root
+  password: password
 base-cost: 32
 oreHits:
   Hematite: 40

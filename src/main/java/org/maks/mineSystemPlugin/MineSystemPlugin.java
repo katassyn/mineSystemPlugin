@@ -3,6 +3,11 @@ package org.maks.mineSystemPlugin;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.maks.mineSystemPlugin.command.LootCommand;
+import org.maks.mineSystemPlugin.storage.MySqlStorage;
+
+import java.sql.SQLException;
+import java.util.logging.Level;
 import org.maks.mineSystemPlugin.events.OreMinedEvent;
 import org.maks.mineSystemPlugin.events.SphereCompleteEvent;
 
@@ -65,6 +70,27 @@ import org.maks.mineSystemPlugin.command.SphereCommand;
  * configuration containing the base repair cost.
  */
 public final class MineSystemPlugin extends JavaPlugin {
+    private MySqlStorage storage;
+    private LootManager lootManager;
+
+    @Override
+    public void onEnable() {
+        saveDefaultConfig();
+        try {
+            String host = getConfig().getString("mysql.host");
+            int port = getConfig().getInt("mysql.port");
+            String database = getConfig().getString("mysql.database");
+            String user = getConfig().getString("mysql.username");
+            String pass = getConfig().getString("mysql.password");
+            String url = "jdbc:mysql://" + host + ":" + port + "/" + database;
+            storage = new MySqlStorage(url, user, pass);
+            lootManager = new LootManager();
+            lootManager.setProbabilities(storage.loadItems());
+            getCommand("loot").setExecutor(new LootCommand(storage, lootManager));
+        } catch (SQLException e) {
+            getLogger().log(Level.SEVERE, "Failed to connect to MySQL", e);
+            getServer().getPluginManager().disablePlugin(this);
+
     private SpecialBlockListener listener;
 
     @Override
@@ -156,6 +182,13 @@ public final class MineSystemPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (storage != null) {
+            storage.close();
+        }
+    }
+
+    public LootManager getLootManager() {
+        return lootManager;
         blockHits.clear();
         oreHits.clear();
     }

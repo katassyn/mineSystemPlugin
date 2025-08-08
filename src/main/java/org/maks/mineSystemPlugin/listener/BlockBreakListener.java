@@ -1,5 +1,6 @@
 package org.maks.mineSystemPlugin.listener;
 
+import io.lumine.mythic.bukkit.MythicBukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
@@ -11,19 +12,18 @@ import org.maks.mineSystemPlugin.MineSystemPlugin;
 import org.maks.mineSystemPlugin.tool.CustomTool;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
 /**
  * Handles custom mining logic. Each ore requires a configured number of hits
- * before it breaks. When the threshold is reached the block's normal drops are
- * spawned and the block is removed.
+ * before it breaks. When the threshold is reached a Mythic item defined in
+ * items.yml is dropped and the block is removed.
  */
 public class BlockBreakListener implements Listener {
 
-    private static final List<Material> ORE_REWARDS =
-            Arrays.asList(Material.COAL, Material.IRON_INGOT, Material.DIAMOND);
+    private static final List<String> BONUS_ITEMS =
+            Arrays.asList("ore_I", "ore_II", "ore_III");
 
     private final MineSystemPlugin plugin;
     private final Random random = new Random();
@@ -35,21 +35,22 @@ public class BlockBreakListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
+        if (!plugin.isCustomOre(block.getType())) {
+            return;
+        }
+
         Player player = event.getPlayer();
         ItemStack tool = player.getInventory().getItemInMainHand();
 
         String oreId = plugin.resolveOreId(block);
         int remaining = plugin.decrementBlockHits(block.getLocation(), oreId);
 
-        // Always cancel default behaviour to control drops and block removal
         event.setCancelled(true);
 
         if (remaining > 0) {
-            // Block still has hits remaining; do not break it yet
             return;
         }
 
-        Collection<ItemStack> drops = block.getDrops(tool, player);
         event.setDropItems(false);
 
         int dupLevel = CustomTool.getDuplicateLevel(tool, plugin);
@@ -61,20 +62,23 @@ public class BlockBreakListener implements Listener {
         };
 
         boolean duplicate = Math.random() < chance;
-        for (ItemStack drop : drops) {
+        ItemStack drop = MythicBukkit.inst().getItemManager().getItemStack(oreId);
+        if (drop != null) {
             block.getWorld().dropItemNaturally(block.getLocation(), drop);
             if (duplicate) {
                 block.getWorld().dropItemNaturally(block.getLocation(), drop.clone());
             }
         }
 
-        // Remove the block
         block.setType(Material.AIR);
 
         int total = plugin.incrementOreCount();
         if (total % 20 == 0) {
-            Material rewardMat = ORE_REWARDS.get(random.nextInt(ORE_REWARDS.size()));
-            block.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(rewardMat));
+            String rewardId = BONUS_ITEMS.get(random.nextInt(BONUS_ITEMS.size()));
+            ItemStack reward = MythicBukkit.inst().getItemManager().getItemStack(rewardId);
+            if (reward != null) {
+                block.getWorld().dropItemNaturally(block.getLocation(), reward);
+            }
         }
     }
 }

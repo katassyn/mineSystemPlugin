@@ -24,7 +24,11 @@ import org.bukkit.scheduler.BukkitTask;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Manages active mining spheres.
@@ -33,33 +37,24 @@ public class SphereManager {
 
     private static final long LIFE_TIME_TICKS = 10L * 60L * 20L; // 10 minutes
 
+    private static final Map<Material, Integer> BASE_ORE_WEIGHTS = Map.of(
+            Material.COAL_ORE, 25,
+            Material.IRON_ORE, 20,
+            Material.LAPIS_ORE, 15,
+            Material.REDSTONE_ORE, 12,
+            Material.GOLD_ORE, 10,
+            Material.EMERALD_ORE, 10,
+            Material.DIAMOND_ORE, 8
+    );
+
     private final Plugin plugin;
     private final Map<UUID, Sphere> active = new HashMap<>();
     private final Random random = new Random();
     private final int maxSpheres;
-    private final List<Material> oreMaterials = new ArrayList<>();
 
     public SphereManager(Plugin plugin) {
         this.plugin = plugin;
         this.maxSpheres = plugin.getConfig().getInt("sphereLimit", 20);
-        List<String> configured = plugin.getConfig().getStringList("sphereOres");
-        for (String name : configured) {
-            Material mat = Material.matchMaterial(name);
-            if (mat != null) {
-                oreMaterials.add(mat);
-            }
-        }
-        if (oreMaterials.isEmpty()) {
-            oreMaterials.addAll(Arrays.asList(
-                    Material.COAL_ORE,
-                    Material.IRON_ORE,
-                    Material.LAPIS_ORE,
-                    Material.REDSTONE_ORE,
-                    Material.GOLD_ORE,
-                    Material.EMERALD_ORE,
-                    Material.DIAMOND_ORE
-            ));
-        }
     }
 
     public boolean createSphere(Player player) {
@@ -126,10 +121,23 @@ public class SphereManager {
         for (BlockVector3 vec : region) {
             BlockState state = clipboard.getBlock(vec);
             if (state.getBlockType().getId().equals("minecraft:white_wool")) {
-                Material mat = oreMaterials.get(random.nextInt(oreMaterials.size()));
+                Material mat = randomBaseOre();
                 clipboard.setBlock(vec, BukkitAdapter.adapt(mat).createBlockState());
             }
         }
+    }
+
+    private Material randomBaseOre() {
+        int total = BASE_ORE_WEIGHTS.values().stream().mapToInt(Integer::intValue).sum();
+        int r = random.nextInt(total);
+        int cumulative = 0;
+        for (Map.Entry<Material, Integer> entry : BASE_ORE_WEIGHTS.entrySet()) {
+            cumulative += entry.getValue();
+            if (r < cumulative) {
+                return entry.getKey();
+            }
+        }
+        return Material.COAL_ORE;
     }
 
     public void removeSphere(UUID uuid) {

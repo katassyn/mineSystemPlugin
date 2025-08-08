@@ -1,12 +1,13 @@
 package org.maks.mineSystemPlugin;
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import org.maks.mineSystemPlugin.command.LootCommand;
 import org.maks.mineSystemPlugin.command.SphereCommand;
@@ -27,8 +28,10 @@ import org.maks.mineSystemPlugin.LootManager;
 
 import java.sql.SQLException;
 import java.time.Duration;
+import org.maks.mineSystemPlugin.sphere.Tier;
+
 import java.util.HashMap;
-import java.util.Locale;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -44,14 +47,47 @@ public final class MineSystemPlugin extends JavaPlugin {
     private DatabaseManager database;
     private QuestRepository questRepository;
 
+    private static final Map<String, Integer> ORE_DURABILITY = Map.ofEntries(
+            Map.entry("Hematite", 40),
+            Map.entry("BlackSpinel", 70),
+            Map.entry("BlackDiamond", 120),
+            Map.entry("Magnetite", 50),
+            Map.entry("Silver", 90),
+            Map.entry("Osmium", 140),
+            Map.entry("Azurite", 60),
+            Map.entry("Tanzanite", 100),
+            Map.entry("BlueSapphire", 150),
+            Map.entry("Carnelian", 65),
+            Map.entry("RedSpinel", 115),
+            Map.entry("PigeonBloodRuby", 175),
+            Map.entry("Pyrite", 75),
+            Map.entry("YellowTopaz", 125),
+            Map.entry("YellowSapphire", 180),
+            Map.entry("Malachite", 90),
+            Map.entry("Peridot", 130),
+            Map.entry("TropicheEmerald", 200),
+            Map.entry("Danburite", 100),
+            Map.entry("Goshenite", 175),
+            Map.entry("Cerussite", 300)
+    );
+
+    private static final Map<Material, List<String>> ORE_ITEM_MAP = Map.of(
+            Material.COAL_ORE, List.of("Hematite", "BlackSpinel", "BlackDiamond"),
+            Material.IRON_ORE, List.of("Magnetite", "Silver", "Osmium"),
+            Material.LAPIS_ORE, List.of("Azurite", "Tanzanite", "BlueSapphire"),
+            Material.REDSTONE_ORE, List.of("Carnelian", "RedSpinel", "PigeonBloodRuby"),
+            Material.GOLD_ORE, List.of("Pyrite", "YellowTopaz", "YellowSapphire"),
+            Material.EMERALD_ORE, List.of("Malachite", "Peridot", "TropicheEmerald"),
+            Material.DIAMOND_ORE, List.of("Danburite", "Goshenite", "Cerussite")
+    );
+
     private final Map<Location, Integer> blockHits = new HashMap<>();
-    private final Map<String, Integer> oreHits = new HashMap<>();
+    private final Map<Location, String> blockOreTypes = new HashMap<>();
     private int oreCount;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        loadOreHitConfig();
 
         database = new DatabaseManager(this);
         questRepository = new QuestRepository(database);
@@ -131,15 +167,29 @@ public final class MineSystemPlugin extends JavaPlugin {
         return sphereManager;
     }
 
+    public boolean isCustomOre(Material material) {
+        return ORE_ITEM_MAP.containsKey(material);
+    }
+
     public String resolveOreId(Block block) {
-        return block.getType().name();
+        return blockOreTypes.computeIfAbsent(block.getLocation(), loc -> randomOreFor(block.getType()));
+    }
+
+    private String randomOreFor(Material material) {
+        List<String> ores = ORE_ITEM_MAP.get(material);
+        if (ores == null || ores.isEmpty()) {
+            return material.name();
+        }
+        Tier tier = Tier.random();
+        return ores.get(tier.ordinal());
     }
 
     public int decrementBlockHits(Location location, String oreId) {
-        int required = oreHits.getOrDefault(oreId.toUpperCase(Locale.ROOT), 1);
+        int required = ORE_DURABILITY.getOrDefault(oreId, 1);
         int hits = blockHits.getOrDefault(location, 0) + 1;
         if (hits >= required) {
             blockHits.remove(location);
+            blockOreTypes.remove(location);
             return 0;
         }
         blockHits.put(location, hits);
@@ -149,16 +199,6 @@ public final class MineSystemPlugin extends JavaPlugin {
     public int incrementOreCount() {
         oreCount++;
         return oreCount;
-    }
-
-    private void loadOreHitConfig() {
-        oreHits.clear();
-        var section = getConfig().getConfigurationSection("oreHits");
-        if (section != null) {
-            for (String key : section.getKeys(false)) {
-                oreHits.put(key.toUpperCase(Locale.ROOT), section.getInt(key));
-            }
-        }
     }
 }
 

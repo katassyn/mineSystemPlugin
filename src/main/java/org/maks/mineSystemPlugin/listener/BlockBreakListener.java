@@ -1,22 +1,32 @@
 package org.maks.mineSystemPlugin.listener;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.player.Player;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
+import org.maks.mineSystemPlugin.item.CustomItems;
+import org.maks.mineSystemPlugin.tool.CustomTool;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 
 /**
  * Handles custom mining logic. Each ore requires a configured number of hits
- * before it breaks. When the threshold is reached a MythicMobs item with the
- * same id as the ore is given to the player and the block is removed.
+ * before it breaks. When the threshold is reached an item matching the
+ * items.yml definition is dropped and the block is removed.
  */
 public class BlockBreakListener implements Listener {
 
+    private static final List<String> BONUS_ITEMS =
+            Arrays.asList("ore_I", "ore_II", "ore_III");
+
     private final MineSystemPlugin plugin;
+    private final Random random = new Random();
 
     public BlockBreakListener(MineSystemPlugin plugin) {
         this.plugin = plugin;
@@ -25,25 +35,50 @@ public class BlockBreakListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
+        if (!plugin.isCustomOre(block.getType())) {
+            return;
+        }
+
         Player player = event.getPlayer();
+        ItemStack tool = player.getInventory().getItemInMainHand();
 
         String oreId = plugin.resolveOreId(block);
         int remaining = plugin.decrementBlockHits(block.getLocation(), oreId);
 
-        // Always cancel default behaviour to control drops and block removal
         event.setCancelled(true);
 
         if (remaining > 0) {
-            // Block still has hits remaining; do not break it yet
             return;
         }
 
-        // Give MythicMobs item via command dispatch to avoid compile dependency
-        Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
-                String.format("mm items give %s %s 1", player.getName(), oreId));
-
-        // Remove the block and prevent default drops
         event.setDropItems(false);
+
+        int dupLevel = CustomTool.getDuplicateLevel(tool, plugin);
+        double chance = switch (dupLevel) {
+            case 1 -> 0.03;
+            case 2 -> 0.04;
+            case 3 -> 0.05;
+            default -> 0.0;
+        };
+
+        boolean duplicate = Math.random() < chance;
+        ItemStack drop = CustomItems.get(oreId);
+        if (drop != null) {
+            block.getWorld().dropItemNaturally(block.getLocation(), drop);
+            if (duplicate) {
+                block.getWorld().dropItemNaturally(block.getLocation(), drop.clone());
+            }
+        }
+
         block.setType(Material.AIR);
+
+        int total = plugin.incrementOreCount();
+        if (total % 20 == 0) {
+            String rewardId = BONUS_ITEMS.get(random.nextInt(BONUS_ITEMS.size()));
+            ItemStack reward = CustomItems.get(rewardId);
+            if (reward != null) {
+                block.getWorld().dropItemNaturally(block.getLocation(), reward);
+            }
+        }
     }
 }

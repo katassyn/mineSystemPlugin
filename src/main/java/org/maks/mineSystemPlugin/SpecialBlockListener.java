@@ -1,16 +1,20 @@
 package org.maks.mineSystemPlugin;
 
-import org.bukkit.Material;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.maks.mineSystemPlugin.item.CustomItems;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 public class SpecialBlockListener implements Listener {
     private final Map<Location, Integer> hitMap = new HashMap<>();
@@ -59,33 +63,29 @@ public class SpecialBlockListener implements Listener {
     }
 
     private ItemStack createLeaf(int tier) {
-        ItemStack item = new ItemStack(Material.OAK_LEAVES);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName("leaf_" + tier);
-            item.setItemMeta(meta);
-        }
-        return item;
+        String id = "leaf_" + roman(tier);
+        ItemStack item = CustomItems.get(id);
+        return item != null ? item : new ItemStack(Material.OAK_LEAVES);
     }
 
     private ItemStack createBone(int tier) {
-        ItemStack item = new ItemStack(Material.BONE);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName("bone_" + tier);
-            item.setItemMeta(meta);
-        }
-        return item;
+        String id = "bone_" + roman(tier);
+        ItemStack item = CustomItems.get(id);
+        return item != null ? item : new ItemStack(Material.BONE);
     }
 
     private ItemStack createCrystal() {
-        ItemStack item = new ItemStack(Material.BRICK);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName("Crystal");
-            item.setItemMeta(meta);
-        }
-        return item;
+        ItemStack item = CustomItems.get("Crystal");
+        return item != null ? item : new ItemStack(Material.BRICK);
+    }
+
+    private String roman(int tier) {
+        return switch (tier) {
+            case 1 -> "I";
+            case 2 -> "II";
+            case 3 -> "III";
+            default -> "I";
+        };
     }
 
     private List<ItemStack> createCrystals() {

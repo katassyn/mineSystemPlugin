@@ -1,26 +1,22 @@
 package org.maks.mineSystemPlugin.command;
 
-import io.lumine.mythic.bukkit.MythicBukkit;
-import io.lumine.mythic.api.items.MythicItemManager;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-
-import java.util.Optional;
+import org.bukkit.inventory.meta.ItemMeta;
 
 /**
  * Handles the creation of spheres via the /sphere command. When a player
- * attempts to create a sphere of type 2 they must possess a MythicMobs item
- * with the ID {@code mine_premium_ticket}. One instance of the item is
- * consumed; otherwise the attempt is rejected.
+ * attempts to create a sphere of type 2 they must possess an item named
+ * "Premium Ticket". One instance of the item is consumed; otherwise the
+ * attempt is rejected.
  */
 public class SphereCommand implements CommandExecutor {
-
-    private static final String PREMIUM_TICKET_ID = "mine_premium_ticket";
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -55,7 +51,7 @@ public class SphereCommand implements CommandExecutor {
     }
 
     /**
-     * Looks for the MythicMobs item in the player's inventory and removes one
+     * Looks for the named ticket in the player's inventory and removes one
      * instance if found.
      *
      * @param player Player whose inventory is inspected
@@ -63,12 +59,13 @@ public class SphereCommand implements CommandExecutor {
      */
     private boolean consumePremiumTicket(Player player) {
         PlayerInventory inventory = player.getInventory();
-        MythicItemManager itemManager = MythicBukkit.inst().getItemManager();
         for (int slot = 0; slot < inventory.getSize(); slot++) {
             ItemStack stack = inventory.getItem(slot);
-            if (stack == null) continue;
-            Optional<String> mythicType = itemManager.getMythicType(stack);
-            if (mythicType.isPresent() && PREMIUM_TICKET_ID.equals(mythicType.get())) {
+            if (stack == null || stack.getType() != Material.PAPER) {
+                continue;
+            }
+            ItemMeta meta = stack.getItemMeta();
+            if (meta != null && ChatColor.stripColor(meta.getDisplayName()).equalsIgnoreCase("Premium Ticket")) {
                 int amount = stack.getAmount();
                 if (amount > 1) {
                     stack.setAmount(amount - 1);

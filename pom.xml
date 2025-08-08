@@ -57,7 +57,7 @@
         </repository>
         <repository>
             <id>mythiccraft-repo</id>
-            <url>https://repo.mythiccraft.io/public/</url>
+            <url>https://repo.mythiccraft.io/repository/maven-public/</url>
         </repository>
     </repositories>
       <repositories>
@@ -100,6 +100,10 @@
         </dependency>
         <dependency>
             <groupId>io.lumine</groupId>
+            <artifactId>Mythic-Dist</artifactId>
+            <version>5.6.1</version>
+            <scope>provided</scope>
+
             <artifactId>Mythic-API</artifactId>
             <version>5.6.1</version>
             <scope>provided</scope>

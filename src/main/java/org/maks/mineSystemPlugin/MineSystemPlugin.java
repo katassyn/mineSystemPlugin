@@ -11,6 +11,20 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.maks.mineSystemPlugin.listener.OreBreakListener;
+
+public class MineSystemPlugin extends JavaPlugin {
+
+    private int globalOreCount = 0;
+
+    @Override
+    public void onEnable() {
+        getServer().getPluginManager().registerEvents(new OreBreakListener(this), this);
+    }
+
+    public int incrementOreCount() {
+        return ++globalOreCount;
+
 import org.maks.mineSystemPlugin.tool.ToolListener;
 import org.maks.mineSystemPlugin.sphere.SphereListener;
 import org.maks.mineSystemPlugin.sphere.SphereManager;

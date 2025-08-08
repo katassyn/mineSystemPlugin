@@ -69,25 +69,24 @@ public final class CustomTool {
     }
 
     /**
-     * Adds the vanilla DIG_SPEED enchantment using a custom name "Mining Speed".
-     * A lore line describing the enchantment is inserted after the durability line
-     * (always at index 2). New enchant descriptions are added from the top.
+     * Adds the vanilla DIG_SPEED enchantment using a custom name and refreshes the
+     * lore so it matches the pattern defined in {@code itemy.md}.
      */
-    public static void addMiningSpeed(ItemStack item, int level) {
+    public static void addMiningSpeed(Plugin plugin, ItemStack item, int level) {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
 
         meta.addEnchant(Enchantment.DIG_SPEED, level, true);
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-
-        insertLoreLine(meta, ChatColor.AQUA + "Mining Speed " + roman(level));
         item.setItemMeta(meta);
+
+        updateEnchantLore(item, plugin);
     }
 
     /**
      * Adds a custom Duplicate enchant. Levels correspond to 3%, 4% and 5% chance
-     * to drop an extra item. Lore line is inserted from the top like other
-     * enchantments.
+     * to drop an extra item. Lore is refreshed to follow the enchanted pickaxe
+     * example from {@code itemy.md}.
      */
     public static void addDuplicate(Plugin plugin, ItemStack item, int level) {
         ItemMeta meta = item.getItemMeta();
@@ -100,8 +99,51 @@ public final class CustomTool {
         // give item a visual enchant glint
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         meta.addEnchant(Enchantment.DURABILITY, 1, true);
+        item.setItemMeta(meta);
 
-        insertLoreLine(meta, ChatColor.LIGHT_PURPLE + "Duplicate " + roman(level));
+        updateEnchantLore(item, plugin);
+    }
+
+    /**
+     * Rebuilds the lore so the first lines list enchantment levels followed by a
+     * blank separator line and the original description and durability.
+     */
+    private static void updateEnchantLore(ItemStack item, Plugin plugin) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+
+        int speed = meta.getEnchantLevel(Enchantment.DIG_SPEED);
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        NamespacedKey dupKey = new NamespacedKey(plugin, "duplicate");
+        Integer dup = pdc.get(dupKey, PersistentDataType.INTEGER);
+
+        List<String> existing = meta.getLore();
+        List<String> lore = new ArrayList<>();
+        if (speed > 0) {
+            lore.add(ChatColor.GRAY + "Mining speed: " + ChatColor.YELLOW + speed + ChatColor.GRAY + " ⛏");
+        }
+        if (dup != null && dup > 0) {
+            lore.add(ChatColor.GRAY + "Duplicate: " + ChatColor.YELLOW + dup + ChatColor.GRAY + " ☘");
+        }
+        if (!lore.isEmpty()) {
+            lore.add("");
+        }
+
+        if (existing != null) {
+            for (String line : existing) {
+                String stripped = ChatColor.stripColor(line);
+                if (stripped == null) continue;
+                if (stripped.startsWith("Mining speed:") || stripped.startsWith("Duplicate:")) {
+                    continue;
+                }
+                if (stripped.isEmpty()) {
+                    continue;
+                }
+                lore.add(line);
+            }
+        }
+
+        meta.setLore(lore);
         item.setItemMeta(meta);
     }
 
@@ -172,17 +214,6 @@ public final class CustomTool {
         return 0;
     }
 
-    private static void insertLoreLine(ItemMeta meta, String line) {
-        List<String> lore = meta.getLore();
-        if (lore == null) {
-            lore = new ArrayList<>();
-        }
-        int durabilityIndex = findDurabilityIndex(lore);
-        int insertIndex = durabilityIndex == -1 ? lore.size() : durabilityIndex + 1;
-        lore.add(insertIndex, line);
-        meta.setLore(lore);
-    }
-
     private static String formatDurability(int cur, int max) {
         return ChatColor.GRAY + "Durability: " + cur + "/" + max;
     }
@@ -197,13 +228,4 @@ public final class CustomTool {
         return -1;
     }
 
-    private static String roman(int number) {
-        return switch (number) {
-            case 2 -> "II";
-            case 3 -> "III";
-            case 4 -> "IV";
-            case 5 -> "V";
-            default -> "I";
-        };
-    }
 }

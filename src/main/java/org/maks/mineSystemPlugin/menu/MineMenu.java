@@ -14,18 +14,20 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.maks.mineSystemPlugin.sphere.SphereManager;
 
 /**
- * GUI for selecting between the regular and premium mines.
- * Selecting the premium mine consumes a Premium Mine Voucher
- * from the player's inventory (ignoring color codes).
+ * GUI for purchasing mining spheres. Players may spawn a regular sphere
+ * by spending stamina or a premium sphere by redeeming a voucher.
  */
 public class MineMenu implements InventoryHolder, Listener {
     private final JavaPlugin plugin;
+    private final SphereManager sphereManager;
     private final Inventory inventory;
 
-    public MineMenu(JavaPlugin plugin) {
+    public MineMenu(JavaPlugin plugin, SphereManager sphereManager) {
         this.plugin = plugin;
+        this.sphereManager = sphereManager;
         this.inventory = Bukkit.createInventory(this, 9, ChatColor.DARK_AQUA + "Choose Mine");
 
         ItemStack normal = new ItemStack(Material.STONE_PICKAXE);
@@ -66,13 +68,15 @@ public class MineMenu implements InventoryHolder, Listener {
         String name = ChatColor.stripColor(item.getItemMeta().getDisplayName());
         if (name.equalsIgnoreCase("Regular Mine")) {
             player.closeInventory();
-            player.sendMessage(ChatColor.GREEN + "Entering the regular mine...");
-            // Teleportation to the regular mine would occur here.
+            if (sphereManager.createSphere(player, false)) {
+                player.sendMessage(ChatColor.GREEN + "Sphere created!");
+            }
         } else if (name.equalsIgnoreCase("Premium Mine")) {
             player.closeInventory();
             if (consumeVoucher(player)) {
-                player.sendMessage(ChatColor.GREEN + "Voucher redeemed. Entering the premium mine...");
-                // Teleportation to the premium mine would occur here.
+                if (sphereManager.createSphere(player, true)) {
+                    player.sendMessage(ChatColor.GREEN + "Premium sphere created!");
+                }
             } else {
                 player.sendMessage(ChatColor.RED + "You need a Premium Mine Voucher to enter!");
             }

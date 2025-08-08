@@ -1,5 +1,6 @@
 package org.maks.mineSystemPlugin.listener;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -8,7 +9,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
+import org.maks.mineSystemPlugin.events.OreMinedEvent;
 import org.maks.mineSystemPlugin.item.CustomItems;
+import org.maks.mineSystemPlugin.tool.CustomTool;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,12 +39,17 @@ public class OreBreakListener implements Listener {
         }
 
         Player player = event.getPlayer();
-        Collection<ItemStack> drops = block.getDrops(player.getInventory().getItemInMainHand());
+        ItemStack tool = player.getInventory().getItemInMainHand();
+        Collection<ItemStack> drops = block.getDrops(tool);
         event.setDropItems(false);
 
         for (ItemStack drop : drops) {
             block.getWorld().dropItemNaturally(block.getLocation(), drop);
         }
+
+        int amount = drops.stream().mapToInt(ItemStack::getAmount).sum();
+        int pickaxeLevel = CustomTool.getToolLevel(tool);
+        Bukkit.getPluginManager().callEvent(new OreMinedEvent(player, type, amount, pickaxeLevel));
 
         int total = plugin.incrementOreCount();
         if (total % 20 == 0) {

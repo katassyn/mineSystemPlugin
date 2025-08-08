@@ -20,6 +20,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
+import org.maks.mineSystemPlugin.events.SphereCompleteEvent;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -144,6 +145,12 @@ public class SphereManager {
         Sphere sphere = active.remove(uuid);
         if (sphere != null) {
             sphere.remove();
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) {
+                Bukkit.getPluginManager().callEvent(
+                        new SphereCompleteEvent(player, sphere.getType().name(), Map.of())
+                );
+            }
         }
     }
 

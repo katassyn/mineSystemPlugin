@@ -11,6 +11,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import org.maks.mineSystemPlugin.command.LootCommand;
 import org.maks.mineSystemPlugin.command.SphereCommand;
+import org.maks.mineSystemPlugin.command.MineCommand;
 import org.maks.mineSystemPlugin.managers.PickaxeManager;
 import org.maks.mineSystemPlugin.stamina.StaminaManager;
 import org.maks.mineSystemPlugin.database.DatabaseManager;
@@ -119,6 +120,7 @@ public final class MineSystemPlugin extends JavaPlugin {
         getCommand("crystalenchant").setExecutor(ceCommand);
         registerListener(ceCommand);
         getCommand("sphere").setExecutor(new SphereCommand());
+        getCommand("mine").setExecutor(new MineCommand(this));
         getCommand("spawnsphere").setExecutor(this);
 
         registerListener(new SpecialBlockListener());

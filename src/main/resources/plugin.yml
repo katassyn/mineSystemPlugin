@@ -10,6 +10,9 @@ commands:
   sphere:
     description: Create a sphere
     usage: /sphere <type>
+  mine:
+    description: Open the mine selection menu
+    usage: /mine
   repair:
     description: Repair the item in your main hand using Crystals.
     usage: /repair

@@ -12,6 +12,8 @@ import org.maks.mineSystemPlugin.command.LootCommand;
 import org.maks.mineSystemPlugin.command.SphereCommand;
 import org.maks.mineSystemPlugin.managers.PickaxeManager;
 import org.maks.mineSystemPlugin.stamina.StaminaManager;
+import org.maks.mineSystemPlugin.database.DatabaseManager;
+import org.maks.mineSystemPlugin.repository.QuestRepository;
 import org.maks.mineSystemPlugin.sphere.SphereManager;
 import org.maks.mineSystemPlugin.sphere.SphereListener;
 import org.maks.mineSystemPlugin.listener.BlockBreakListener;
@@ -39,6 +41,8 @@ public final class MineSystemPlugin extends JavaPlugin {
     private SphereManager sphereManager;
     private StaminaManager staminaManager;
     private PickaxeManager pickaxeManager;
+    private DatabaseManager database;
+    private QuestRepository questRepository;
 
     private final Map<Location, Integer> blockHits = new HashMap<>();
     private final Map<String, Integer> oreHits = new HashMap<>();
@@ -49,8 +53,11 @@ public final class MineSystemPlugin extends JavaPlugin {
         saveDefaultConfig();
         loadOreHitConfig();
 
+        database = new DatabaseManager(this);
+        questRepository = new QuestRepository(database);
+
         int maxStamina = getConfig().getInt("maxStamina", 100);
-        staminaManager = new StaminaManager(this, maxStamina, Duration.ofHours(24));
+        staminaManager = new StaminaManager(this, maxStamina, Duration.ofHours(12), questRepository);
         sphereManager = new SphereManager(this);
         pickaxeManager = new PickaxeManager(this);
         lootManager = new LootManager();
@@ -97,6 +104,9 @@ public final class MineSystemPlugin extends JavaPlugin {
         }
         if (storage != null) {
             storage.close();
+        }
+        if (database != null) {
+            database.close();
         }
     }
 

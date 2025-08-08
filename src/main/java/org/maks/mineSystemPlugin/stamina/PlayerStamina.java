@@ -7,10 +7,12 @@ import java.time.Instant;
  */
 public class PlayerStamina {
     private int stamina;
+    private int maxStamina;
     private Instant firstUsage;
 
-    public PlayerStamina(int stamina) {
-        this.stamina = stamina;
+    public PlayerStamina(int maxStamina) {
+        this.stamina = maxStamina;
+        this.maxStamina = maxStamina;
     }
 
     public int getStamina() {
@@ -19,6 +21,14 @@ public class PlayerStamina {
 
     public void setStamina(int stamina) {
         this.stamina = stamina;
+    }
+
+    public int getMaxStamina() {
+        return maxStamina;
+    }
+
+    public void setMaxStamina(int maxStamina) {
+        this.maxStamina = maxStamina;
     }
 
     public Instant getFirstUsage() {

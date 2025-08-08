@@ -19,6 +19,14 @@ mysql:
 # Default configuration for MineSystemPlugin
 maxStamina: 100
 sphereLimit: 20
+sphereOres:
+  - COAL_ORE
+  - IRON_ORE
+  - LAPIS_ORE
+  - REDSTONE_ORE
+  - GOLD_ORE
+  - EMERALD_ORE
+  - DIAMOND_ORE
 baseRepairCost: 32
 baseEnchantCost: 64
 

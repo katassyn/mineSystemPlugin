@@ -107,7 +107,7 @@ public final class MineSystemPlugin extends JavaPlugin {
             String url = "jdbc:mysql://" + host + ":" + port + "/" + database;
             storage = new MySqlStorage(url, user, pass);
             lootManager.setProbabilities(storage.loadItems());
-            getCommand("loot").setExecutor(new LootCommand(storage, lootManager));
+            getCommand("loot").setExecutor(new LootCommand(this, storage, lootManager));
         } catch (SQLException e) {
             getLogger().log(Level.SEVERE, "Failed to connect to MySQL", e);
             getServer().getPluginManager().disablePlugin(this);

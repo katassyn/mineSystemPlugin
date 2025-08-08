@@ -16,37 +16,35 @@ import org.maks.mineSystemPlugin.managers.PickaxeManager;
 import org.maks.mineSystemPlugin.stamina.StaminaManager;
 import org.maks.mineSystemPlugin.database.DatabaseManager;
 import org.maks.mineSystemPlugin.repository.QuestRepository;
+import org.maks.mineSystemPlugin.repository.LootRepository;
 import org.maks.mineSystemPlugin.sphere.SphereManager;
 import org.maks.mineSystemPlugin.sphere.SphereListener;
 import org.maks.mineSystemPlugin.listener.BlockBreakListener;
 import org.maks.mineSystemPlugin.listener.OreBreakListener;
 import org.maks.mineSystemPlugin.tool.ToolListener;
-import org.maks.mineSystemPlugin.storage.MySqlStorage;
 import org.maks.mineSystemPlugin.SpecialBlockListener;
 import org.maks.mineSystemPlugin.CrystalEnchantCommand;
 import org.maks.mineSystemPlugin.RepairCommand;
 import org.maks.mineSystemPlugin.LootManager;
 
-import java.sql.SQLException;
 import java.time.Duration;
 import org.maks.mineSystemPlugin.sphere.Tier;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 
 /**
  * Main plugin entry point.
  */
 public final class MineSystemPlugin extends JavaPlugin {
-    private MySqlStorage storage;
     private LootManager lootManager;
     private SphereManager sphereManager;
     private StaminaManager staminaManager;
     private PickaxeManager pickaxeManager;
     private DatabaseManager database;
     private QuestRepository questRepository;
+    private LootRepository lootRepository;
 
     private static final Map<String, Integer> ORE_DURABILITY = Map.ofEntries(
             Map.entry("Hematite", 40),
@@ -88,32 +86,16 @@ public final class MineSystemPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        saveDefaultConfig();
-
         database = new DatabaseManager(this);
         questRepository = new QuestRepository(database);
 
-        int maxStamina = getConfig().getInt("maxStamina", 100);
-        staminaManager = new StaminaManager(this, maxStamina, Duration.ofHours(12), questRepository);
-        sphereManager = new SphereManager(this);
+        staminaManager = new StaminaManager(this, 100, Duration.ofHours(12), questRepository);
+        sphereManager = new SphereManager(this, staminaManager);
         pickaxeManager = new PickaxeManager(this);
         lootManager = new LootManager();
-
-        try {
-            String host = getConfig().getString("mysql.host");
-            int port = getConfig().getInt("mysql.port");
-            String database = getConfig().getString("mysql.database");
-            String user = getConfig().getString("mysql.username");
-            String pass = getConfig().getString("mysql.password");
-            String url = "jdbc:mysql://" + host + ":" + port + "/" + database;
-            storage = new MySqlStorage(url, user, pass);
-            lootManager.setProbabilities(storage.loadItems());
-            getCommand("loot").setExecutor(new LootCommand(this, storage, lootManager));
-        } catch (SQLException e) {
-            getLogger().log(Level.SEVERE, "Failed to connect to MySQL", e);
-            getServer().getPluginManager().disablePlugin(this);
-            return;
-        }
+        lootRepository = new LootRepository(database);
+        lootManager.setProbabilities(lootRepository.load().join());
+        getCommand("loot").setExecutor(new LootCommand(this, lootRepository, lootManager));
 
         getCommand("repair").setExecutor(new RepairCommand(this));
         CrystalEnchantCommand ceCommand = new CrystalEnchantCommand(this);
@@ -141,9 +123,6 @@ public final class MineSystemPlugin extends JavaPlugin {
         }
         if (pickaxeManager != null) {
             pickaxeManager.saveAll();
-        }
-        if (storage != null) {
-            storage.close();
         }
         if (database != null) {
             database.close();

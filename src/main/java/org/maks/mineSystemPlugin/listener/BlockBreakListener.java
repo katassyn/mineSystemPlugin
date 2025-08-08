@@ -87,5 +87,12 @@ public class BlockBreakListener implements Listener {
                 block.getWorld().dropItemNaturally(block.getLocation(), reward);
             }
         }
+
+        boolean broken = CustomTool.damage(tool, plugin);
+        if (broken) {
+            player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
+        } else {
+            player.getInventory().setItemInMainHand(tool);
+        }
     }
 }

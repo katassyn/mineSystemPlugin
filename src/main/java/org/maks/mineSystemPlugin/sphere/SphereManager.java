@@ -21,6 +21,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.maks.mineSystemPlugin.events.SphereCompleteEvent;
+import org.maks.mineSystemPlugin.stamina.StaminaManager;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -52,10 +53,12 @@ public class SphereManager {
     private final Map<UUID, Sphere> active = new HashMap<>();
     private final Random random = new Random();
     private final int maxSpheres;
+    private final StaminaManager stamina;
 
-    public SphereManager(Plugin plugin) {
+    public SphereManager(Plugin plugin, StaminaManager stamina) {
         this.plugin = plugin;
-        this.maxSpheres = plugin.getConfig().getInt("sphereLimit", 20);
+        this.stamina = stamina;
+        this.maxSpheres = 20;
     }
 
     public boolean createSphere(Player player) {
@@ -67,6 +70,11 @@ public class SphereManager {
             player.sendMessage("You already have an active sphere");
             return false;
         }
+        if (!stamina.hasStamina(player.getUniqueId(), 10)) {
+            player.sendMessage("Not enough stamina");
+            return false;
+        }
+        stamina.deductStamina(player.getUniqueId(), 10);
 
         SphereType type = SphereType.random();
         File folder = new File(plugin.getDataFolder(), "schematics/" + type.getFolderName());

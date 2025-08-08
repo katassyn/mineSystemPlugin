@@ -39,7 +39,7 @@ public class PickaxeRepository {
     public CompletableFuture<Void> save(PickaxeData data) {
         return CompletableFuture.runAsync(() -> {
             String sql = "INSERT INTO pickaxes(uuid, material, durability, enchants) VALUES(?, ?, ?, ?) " +
-                    "ON CONFLICT(uuid) DO UPDATE SET material=excluded.material, durability=excluded.durability, enchants=excluded.enchants";
+                    "ON DUPLICATE KEY UPDATE material=VALUES(material), durability=VALUES(durability), enchants=VALUES(enchants)";
             try (Connection connection = database.getDataSource().getConnection();
                  PreparedStatement ps = connection.prepareStatement(sql)) {
                 ps.setString(1, data.uuid().toString());

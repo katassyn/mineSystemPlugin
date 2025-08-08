@@ -39,7 +39,7 @@ public class QuestRepository {
     public CompletableFuture<Void> save(QuestData data) {
         return CompletableFuture.runAsync(() -> {
             String sql = "INSERT INTO quests(uuid, progress) VALUES(?, ?) " +
-                    "ON CONFLICT(uuid) DO UPDATE SET progress=excluded.progress";
+                    "ON DUPLICATE KEY UPDATE progress=VALUES(progress)";
             try (Connection connection = database.getDataSource().getConnection();
                  PreparedStatement ps = connection.prepareStatement(sql)) {
                 ps.setString(1, data.uuid().toString());

@@ -14,10 +14,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.maks.mineSystemPlugin.LootManager;
-import org.maks.mineSystemPlugin.storage.MySqlStorage;
+import org.maks.mineSystemPlugin.repository.LootRepository;
 
-import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,23 +24,17 @@ import java.util.Map;
  */
 public class LootEditMenu implements InventoryHolder, Listener {
     private final JavaPlugin plugin;
-    private final MySqlStorage storage;
+    private final LootRepository storage;
     private final LootManager lootManager;
     private final Inventory inventory;
 
-    public LootEditMenu(JavaPlugin plugin, MySqlStorage storage, LootManager lootManager) {
+    public LootEditMenu(JavaPlugin plugin, LootRepository storage, LootManager lootManager) {
         this.plugin = plugin;
         this.storage = storage;
         this.lootManager = lootManager;
         this.inventory = Bukkit.createInventory(this, 27, ChatColor.DARK_GREEN + "Loot Editor");
 
-        Map<Material, Integer> items;
-        try {
-            items = storage.loadItems();
-        } catch (SQLException e) {
-            items = new HashMap<>();
-            plugin.getLogger().severe("Failed to load loot items: " + e.getMessage());
-        }
+        Map<Material, Integer> items = storage.load().join();
         for (Map.Entry<Material, Integer> entry : items.entrySet()) {
             ItemStack item = new ItemStack(entry.getKey());
             ItemMeta meta = item.getItemMeta();
@@ -99,12 +91,8 @@ public class LootEditMenu implements InventoryHolder, Listener {
                 map.put(item.getType(), chance);
             }
         }
-        try {
-            storage.saveItems(map);
-            lootManager.setProbabilities(map);
-        } catch (SQLException e) {
-            plugin.getLogger().severe("Failed to save loot items: " + e.getMessage());
-        }
+        storage.save(map);
+        lootManager.setProbabilities(map);
     }
 
     private int parseChance(ItemMeta meta) {

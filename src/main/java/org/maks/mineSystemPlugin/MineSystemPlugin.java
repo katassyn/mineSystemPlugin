@@ -35,6 +35,12 @@ import java.util.Map;
 
 
 public final class MineSystemPlugin extends JavaPlugin {
+    private SpecialBlockListener listener;
+
+    @Override
+    public void onEnable() {
+        listener = new SpecialBlockListener();
+        getServer().getPluginManager().registerEvents(listener, this);
     private DatabaseManager database;
     private PlayersDao playersDao;
     private PickaxesDao pickaxesDao;

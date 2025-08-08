@@ -1,15 +1,14 @@
 package org.maks.mineSystemPlugin.command;
 
-import io.lumine.mythic.bukkit.MythicBukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-
-import java.util.Optional;
+import org.bukkit.inventory.meta.ItemMeta;
 
 /**
  * Handles the creation of spheres via the /sphere command. When a player
@@ -18,8 +17,6 @@ import java.util.Optional;
  * attempt is rejected.
  */
 public class SphereCommand implements CommandExecutor {
-
-    private static final String PREMIUM_TICKET_ID = "PremiumTicket";
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -64,9 +61,11 @@ public class SphereCommand implements CommandExecutor {
         PlayerInventory inventory = player.getInventory();
         for (int slot = 0; slot < inventory.getSize(); slot++) {
             ItemStack stack = inventory.getItem(slot);
-            if (stack == null) continue;
-            Optional<String> type = MythicBukkit.inst().getItemManager().getMythicType(stack);
-            if (type.isPresent() && type.get().equalsIgnoreCase(PREMIUM_TICKET_ID)) {
+            if (stack == null || stack.getType() != Material.PAPER) {
+                continue;
+            }
+            ItemMeta meta = stack.getItemMeta();
+            if (meta != null && ChatColor.stripColor(meta.getDisplayName()).equalsIgnoreCase("Premium Ticket")) {
                 int amount = stack.getAmount();
                 if (amount > 1) {
                     stack.setAmount(amount - 1);

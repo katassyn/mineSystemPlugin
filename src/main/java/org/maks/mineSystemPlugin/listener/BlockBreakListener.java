@@ -1,6 +1,5 @@
 package org.maks.mineSystemPlugin.listener;
 
-import io.lumine.mythic.bukkit.MythicBukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
@@ -9,6 +8,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.player.Player;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
+import org.maks.mineSystemPlugin.item.CustomItems;
 import org.maks.mineSystemPlugin.tool.CustomTool;
 
 import java.util.Arrays;
@@ -17,8 +17,8 @@ import java.util.Random;
 
 /**
  * Handles custom mining logic. Each ore requires a configured number of hits
- * before it breaks. When the threshold is reached a Mythic item defined in
- * items.yml is dropped and the block is removed.
+ * before it breaks. When the threshold is reached an item matching the
+ * items.yml definition is dropped and the block is removed.
  */
 public class BlockBreakListener implements Listener {
 
@@ -62,7 +62,7 @@ public class BlockBreakListener implements Listener {
         };
 
         boolean duplicate = Math.random() < chance;
-        ItemStack drop = MythicBukkit.inst().getItemManager().getItemStack(oreId);
+        ItemStack drop = CustomItems.get(oreId);
         if (drop != null) {
             block.getWorld().dropItemNaturally(block.getLocation(), drop);
             if (duplicate) {
@@ -75,7 +75,7 @@ public class BlockBreakListener implements Listener {
         int total = plugin.incrementOreCount();
         if (total % 20 == 0) {
             String rewardId = BONUS_ITEMS.get(random.nextInt(BONUS_ITEMS.size()));
-            ItemStack reward = MythicBukkit.inst().getItemManager().getItemStack(rewardId);
+            ItemStack reward = CustomItems.get(rewardId);
             if (reward != null) {
                 block.getWorld().dropItemNaturally(block.getLocation(), reward);
             }

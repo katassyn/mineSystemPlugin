@@ -1,6 +1,5 @@
 package org.maks.mineSystemPlugin;
 
-import io.lumine.mythic.bukkit.MythicBukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -9,6 +8,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
+import org.maks.mineSystemPlugin.item.CustomItems;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,18 +64,18 @@ public class SpecialBlockListener implements Listener {
 
     private ItemStack createLeaf(int tier) {
         String id = "leaf_" + roman(tier);
-        ItemStack item = MythicBukkit.inst().getItemManager().getItemStack(id);
+        ItemStack item = CustomItems.get(id);
         return item != null ? item : new ItemStack(Material.OAK_LEAVES);
     }
 
     private ItemStack createBone(int tier) {
         String id = "bone_" + roman(tier);
-        ItemStack item = MythicBukkit.inst().getItemManager().getItemStack(id);
+        ItemStack item = CustomItems.get(id);
         return item != null ? item : new ItemStack(Material.BONE);
     }
 
     private ItemStack createCrystal() {
-        ItemStack item = MythicBukkit.inst().getItemManager().getItemStack("Crystal");
+        ItemStack item = CustomItems.get("Crystal");
         return item != null ? item : new ItemStack(Material.BRICK);
     }
 

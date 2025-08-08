@@ -1,6 +1,5 @@
 package org.maks.mineSystemPlugin.listener;
 
-import io.lumine.mythic.bukkit.MythicBukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -9,6 +8,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
+import org.maks.mineSystemPlugin.item.CustomItems;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -46,7 +46,7 @@ public class OreBreakListener implements Listener {
         int total = plugin.incrementOreCount();
         if (total % 20 == 0) {
             String rewardId = BONUS_ITEMS.get(random.nextInt(BONUS_ITEMS.size()));
-            ItemStack reward = MythicBukkit.inst().getItemManager().getItemStack(rewardId);
+            ItemStack reward = CustomItems.get(rewardId);
             if (reward != null) {
                 block.getWorld().dropItemNaturally(block.getLocation(), reward);
             }

@@ -22,8 +22,9 @@
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
         <repository>
-            <id>mythiccraft-repo</id>
-            <url>https://repo.mythiccraft.io/repository/maven-public/</url>
+            <id>nexus</id>
+            <name>Lumine Releases</name>
+            <url>https://mvn.lumine.io/repository/maven-public/</url>
         </repository>
         <repository>
             <id>enginehub-repo</id>
@@ -32,6 +33,14 @@
         <repository>
             <id>intellectualsites-repo</id>
             <url>https://maven.intellectualsites.com/content/groups/public/</url>
+        </repository>
+        <repository>
+            <id>intellectualsites-snapshots</id>
+            <url>https://mvn.intellectualsites.com/content/repositories/snapshots/</url>
+        </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
         </repository>
     </repositories>
 
@@ -43,12 +52,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.sk89q.worldedit</groupId>
-            <artifactId>worldedit-bukkit</artifactId>
-            <version>7.2.14</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>com.fastasyncworldedit</groupId>
             <artifactId>FastAsyncWorldEdit-Bukkit</artifactId>
             <version>2.5.2</version>
@@ -57,13 +60,7 @@
         <dependency>
             <groupId>io.lumine</groupId>
             <artifactId>Mythic-Dist</artifactId>
-            <version>5.6.1</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.lumine</groupId>
-            <artifactId>Mythic-API</artifactId>
-            <version>5.6.1</version>
+            <version>5.6.2</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

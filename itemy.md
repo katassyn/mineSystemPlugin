@@ -733,3 +733,15 @@ Options:
 HideFlags: true
 HideAttributes: true
 Unbreakable: true
+  premium_mine_ticket:
+  Id: potato
+  Display: '§3Premium Mine Ticket'
+  Group: Currency
+  Enchantments:
+    - DURABILITY:10
+      Lore:
+    - '§o&7Used to enter Premium Mine'
+      Options:
+      HideFlags: true
+      HideAttributes: true
+      Unbreakable: true

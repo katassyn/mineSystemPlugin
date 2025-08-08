@@ -15,6 +15,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+/**
+ * Main plugin class which sets up the {@link StaminaManager}.
+ */
 public final class MineSystemPlugin extends JavaPlugin {
     private DatabaseManager database;
     private PlayersDao playersDao;
@@ -28,8 +31,13 @@ public final class MineSystemPlugin extends JavaPlugin {
     private PickaxeManager pickaxeManager;
 
 
+    private StaminaManager staminaManager;
+
     @Override
     public void onEnable() {
+        // Initialize stamina with a default max of 100. This value may grow with quests.
+        staminaManager = new StaminaManager(100);
+
         database = new DatabaseManager(this);
         playersDao = new PlayersDao(database);
         pickaxesDao = new PickaxesDao(database);

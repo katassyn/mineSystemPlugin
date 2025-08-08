@@ -35,6 +35,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 
+import org.maks.mineSystemPlugin.command.SphereCommand;
+
+
 /**
  * Main plugin entry point. Registers the repair command and loads the
  * configuration containing the base repair cost.
@@ -44,6 +47,9 @@ public final class MineSystemPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        // Plugin startup logic
+        getCommand("sphere").setExecutor(new SphereCommand());
+
         // ensure the config file exists
         saveDefaultConfig();
 

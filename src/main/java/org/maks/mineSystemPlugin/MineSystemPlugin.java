@@ -11,6 +11,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.maks.mineSystemPlugin.tool.ToolListener;
 import org.maks.mineSystemPlugin.sphere.SphereListener;
 import org.maks.mineSystemPlugin.sphere.SphereManager;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -67,6 +68,9 @@ public final class MineSystemPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        // Register listeners
+        getServer().getPluginManager().registerEvents(new ToolListener(this), this);
+
         saveDefaultConfig();
 
         oreKey = new NamespacedKey(this, "oreId");

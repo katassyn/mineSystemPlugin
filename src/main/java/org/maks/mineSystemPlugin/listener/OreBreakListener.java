@@ -53,10 +53,13 @@ public class OreBreakListener implements Listener {
 
         int total = plugin.incrementOreCount();
         if (total % 20 == 0) {
-            String rewardId = BONUS_ITEMS.get(random.nextInt(BONUS_ITEMS.size()));
-            ItemStack reward = CustomItems.get(rewardId);
-            if (reward != null) {
-                block.getWorld().dropItemNaturally(block.getLocation(), reward);
+            int bonus = random.nextInt(3) + 1;
+            for (int i = 0; i < bonus; i++) {
+                String rewardId = BONUS_ITEMS.get(random.nextInt(BONUS_ITEMS.size()));
+                ItemStack reward = CustomItems.get(rewardId);
+                if (reward != null) {
+                    block.getWorld().dropItemNaturally(block.getLocation(), reward.clone());
+                }
             }
         }
     }

@@ -9,7 +9,12 @@ import com.sk89q.worldedit.session.EditSession;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
+
+import java.util.List;
 
 /**
  * Represents a pasted sphere instance in the world.
@@ -21,17 +26,27 @@ public class Sphere {
     private final BukkitTask expiryTask;
     private final World world;
     private final Location origin;
+    private final List<ArmorStand> holograms;
 
-    public Sphere(SphereType type, Region region, BukkitTask expiryTask, World world, Location origin) {
+    public Sphere(SphereType type, Region region, BukkitTask expiryTask, World world, Location origin, List<ArmorStand> holograms) {
         this.type = type;
         this.region = region;
         this.expiryTask = expiryTask;
         this.world = world;
         this.origin = origin;
+        this.holograms = holograms;
     }
 
     public SphereType getType() {
         return type;
+    }
+
+    public Region getRegion() {
+        return region;
+    }
+
+    public World getWorld() {
+        return world;
     }
 
     /**
@@ -39,6 +54,18 @@ public class Sphere {
      */
     public void remove() {
         expiryTask.cancel();
+        for (ArmorStand stand : holograms) {
+            stand.remove();
+        }
+        for (LivingEntity entity : world.getLivingEntities()) {
+            if (entity instanceof Player) {
+                continue;
+            }
+            Location l = entity.getLocation();
+            if (region.contains(BlockVector3.at(l.getBlockX(), l.getBlockY(), l.getBlockZ()))) {
+                entity.remove();
+            }
+        }
         try (EditSession session = WorldEdit.getInstance().newEditSession(BukkitAdapter.adapt(world))) {
             for (BlockVector3 vec : region) {
                 session.setBlock(vec, BlockTypes.AIR.getDefaultState());

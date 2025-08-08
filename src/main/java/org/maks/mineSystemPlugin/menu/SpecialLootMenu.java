@@ -3,7 +3,6 @@ package org.maks.mineSystemPlugin.menu;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
@@ -13,38 +12,43 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.maks.mineSystemPlugin.LootManager;
-import org.maks.mineSystemPlugin.repository.LootRepository;
+import org.bukkit.NamespacedKey;
+import org.maks.mineSystemPlugin.SpecialLootEntry;
+import org.maks.mineSystemPlugin.SpecialLootManager;
+import org.maks.mineSystemPlugin.repository.SpecialLootRepository;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Inventory GUI for editing loot items.
+ * GUI for configuring fixed loot of special schematics.
  */
-public class LootEditMenu implements InventoryHolder, Listener {
+public class SpecialLootMenu implements InventoryHolder, Listener {
     private final JavaPlugin plugin;
-    private final LootRepository storage;
-    private final LootManager lootManager;
+    private final String schematic;
+    private final SpecialLootRepository storage;
+    private final SpecialLootManager manager;
     private final Inventory inventory;
     private final NamespacedKey chanceKey;
 
-    public LootEditMenu(JavaPlugin plugin, LootRepository storage, LootManager lootManager) {
+    public SpecialLootMenu(JavaPlugin plugin, String schematic, SpecialLootRepository storage, SpecialLootManager manager) {
         this.plugin = plugin;
+        this.schematic = schematic;
         this.storage = storage;
-        this.lootManager = lootManager;
-        this.inventory = Bukkit.createInventory(this, 27, ChatColor.DARK_GREEN + "Loot Editor");
+        this.manager = manager;
+        this.inventory = Bukkit.createInventory(this, 27, ChatColor.DARK_PURPLE + "Special Loot: " + schematic);
         this.chanceKey = new NamespacedKey(plugin, "chance");
-
-        Map<Material, Integer> items = storage.load().join();
-        for (Map.Entry<Material, Integer> e : items.entrySet()) {
-            ItemStack item = new ItemStack(e.getKey());
-            setChance(item, e.getValue());
-            inventory.addItem(item);
+        Map<Material, SpecialLootEntry> existing = manager.getLoot(schematic);
+        if (existing != null) {
+            for (Map.Entry<Material, SpecialLootEntry> e : existing.entrySet()) {
+                ItemStack item = new ItemStack(e.getKey(), e.getValue().amount());
+                setChance(item, e.getValue().chance());
+                inventory.addItem(item);
+            }
         }
-
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
@@ -68,7 +72,8 @@ public class LootEditMenu implements InventoryHolder, Listener {
         if (meta == null) {
             return 0;
         }
-        return meta.getPersistentDataContainer().getOrDefault(chanceKey, PersistentDataType.INTEGER, 0);
+        PersistentDataContainer container = meta.getPersistentDataContainer();
+        return container.getOrDefault(chanceKey, PersistentDataType.INTEGER, 0);
     }
 
     @EventHandler
@@ -97,17 +102,19 @@ public class LootEditMenu implements InventoryHolder, Listener {
     }
 
     @EventHandler
-    public void onInventoryClose(InventoryCloseEvent event) {
+    public void onClose(InventoryCloseEvent event) {
         if (event.getInventory().getHolder() != this) {
             return;
         }
         HandlerList.unregisterAll(this);
-        Map<Material, Integer> map = new HashMap<>();
+        Map<Material, SpecialLootEntry> map = new HashMap<>();
         for (ItemStack item : inventory.getContents()) {
             if (item == null || item.getType() == Material.AIR) continue;
-            map.put(item.getType(), getChance(item));
+            int chance = getChance(item);
+            int amount = item.getAmount();
+            map.put(item.getType(), new SpecialLootEntry(amount, chance));
         }
-        storage.save(map);
-        lootManager.setProbabilities(map);
+        storage.save(schematic, map);
+        manager.setLoot(schematic, map);
     }
 }

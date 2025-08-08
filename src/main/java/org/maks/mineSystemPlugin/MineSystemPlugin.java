@@ -68,6 +68,8 @@ public final class MineSystemPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        getCommand("crystalenchant").setExecutor(new CrystalEnchantCommand());
+
         // Register listeners
         getServer().getPluginManager().registerEvents(new ToolListener(this), this);
 

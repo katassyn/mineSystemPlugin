@@ -5,7 +5,7 @@ import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
-import com.sk89q.worldedit.session.EditSession;
+import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -66,7 +66,10 @@ public class Sphere {
                 entity.remove();
             }
         }
-        try (EditSession session = WorldEdit.getInstance().newEditSession(BukkitAdapter.adapt(world))) {
+        try (EditSession session = WorldEdit.getInstance()
+                .newEditSessionBuilder()
+                .world(BukkitAdapter.adapt(world))
+                .build()) {
             for (BlockVector3 vec : region) {
                 session.setBlock(vec, BlockTypes.AIR.getDefaultState());
             }

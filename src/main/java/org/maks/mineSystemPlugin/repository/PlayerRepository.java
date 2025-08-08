@@ -39,7 +39,7 @@ public class PlayerRepository {
     public CompletableFuture<Void> save(PlayerData data) {
         return CompletableFuture.runAsync(() -> {
             String sql = "INSERT INTO players(uuid, stamina, reset_timestamp) VALUES(?, ?, ?) " +
-                    "ON CONFLICT(uuid) DO UPDATE SET stamina=excluded.stamina, reset_timestamp=excluded.reset_timestamp";
+                    "ON DUPLICATE KEY UPDATE stamina=VALUES(stamina), reset_timestamp=VALUES(reset_timestamp)";
             try (Connection connection = database.getDataSource().getConnection();
                  PreparedStatement ps = connection.prepareStatement(sql)) {
                 ps.setString(1, data.uuid().toString());

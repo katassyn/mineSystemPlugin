@@ -4,7 +4,6 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -16,15 +15,12 @@ public class DatabaseManager {
     private final ExecutorService executor = Executors.newFixedThreadPool(10);
 
     public DatabaseManager(JavaPlugin plugin) {
-        File dataFolder = plugin.getDataFolder();
-        if (!dataFolder.exists()) {
-            //noinspection ResultOfMethodCallIgnored
-            dataFolder.mkdirs();
-        }
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:sqlite:" + new File(dataFolder, "data.db"));
-        config.setConnectionTestQuery("SELECT 1");
+        config.setJdbcUrl("jdbc:mysql://localhost:3306/minesystem");
+        config.setUsername("root");
+        config.setPassword("password");
         config.setMaximumPoolSize(10);
+        config.setConnectionTestQuery("SELECT 1");
         this.dataSource = new HikariDataSource(config);
         initTables();
     }
@@ -32,10 +28,11 @@ public class DatabaseManager {
     private void initTables() {
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement()) {
-            statement.executeUpdate("CREATE TABLE IF NOT EXISTS players (uuid TEXT PRIMARY KEY, stamina INTEGER, reset_timestamp INTEGER)");
-            statement.executeUpdate("CREATE TABLE IF NOT EXISTS pickaxes (uuid TEXT PRIMARY KEY, material TEXT, durability INTEGER, enchants TEXT)");
-            statement.executeUpdate("CREATE TABLE IF NOT EXISTS quests (uuid TEXT PRIMARY KEY, progress INTEGER)");
-            statement.executeUpdate("CREATE TABLE IF NOT EXISTS spheres (uuid TEXT PRIMARY KEY, type TEXT, start_time INTEGER)");
+            statement.executeUpdate("CREATE TABLE IF NOT EXISTS players (uuid VARCHAR(36) PRIMARY KEY, stamina INT, reset_timestamp BIGINT)");
+            statement.executeUpdate("CREATE TABLE IF NOT EXISTS pickaxes (uuid VARCHAR(36) PRIMARY KEY, material VARCHAR(32), durability INT, enchants TEXT)");
+            statement.executeUpdate("CREATE TABLE IF NOT EXISTS quests (uuid VARCHAR(36) PRIMARY KEY, progress INT)");
+            statement.executeUpdate("CREATE TABLE IF NOT EXISTS spheres (uuid VARCHAR(36) PRIMARY KEY, type VARCHAR(32), start_time BIGINT)");
+            statement.executeUpdate("CREATE TABLE IF NOT EXISTS loot_items (material VARCHAR(64) PRIMARY KEY, chance INT)");
         } catch (SQLException e) {
             e.printStackTrace();
         }

@@ -54,7 +54,7 @@ public class RepairCommand implements CommandExecutor {
     }
 
     private int calculateCost(ItemStack item) {
-        int base = plugin.getConfig().getInt("baseRepairCost", 32);
+        int base = 32;
         int tierIndex = materialTier(item.getType());
         int materialCost = base * (1 << tierIndex);
 

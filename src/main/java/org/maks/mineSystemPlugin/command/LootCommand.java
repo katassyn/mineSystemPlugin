@@ -9,17 +9,17 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.maks.mineSystemPlugin.LootManager;
 import org.maks.mineSystemPlugin.menu.LootEditMenu;
-import org.maks.mineSystemPlugin.storage.MySqlStorage;
+import org.maks.mineSystemPlugin.repository.LootRepository;
 
 /**
  * Command for managing loot configuration.
  */
 public class LootCommand implements CommandExecutor {
     private final JavaPlugin plugin;
-    private final MySqlStorage storage;
+    private final LootRepository storage;
     private final LootManager lootManager;
 
-    public LootCommand(JavaPlugin plugin, MySqlStorage storage, LootManager lootManager) {
+    public LootCommand(JavaPlugin plugin, LootRepository storage, LootManager lootManager) {
         this.plugin = plugin;
         this.storage = storage;
         this.lootManager = lootManager;

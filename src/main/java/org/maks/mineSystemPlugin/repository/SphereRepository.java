@@ -39,7 +39,7 @@ public class SphereRepository {
     public CompletableFuture<Void> save(SphereData data) {
         return CompletableFuture.runAsync(() -> {
             String sql = "INSERT INTO spheres(uuid, type, start_time) VALUES(?, ?, ?) " +
-                    "ON CONFLICT(uuid) DO UPDATE SET type=excluded.type, start_time=excluded.start_time";
+                    "ON DUPLICATE KEY UPDATE type=VALUES(type), start_time=VALUES(start_time)";
             try (Connection connection = database.getDataSource().getConnection();
                  PreparedStatement ps = connection.prepareStatement(sql)) {
                 ps.setString(1, data.uuid().toString());

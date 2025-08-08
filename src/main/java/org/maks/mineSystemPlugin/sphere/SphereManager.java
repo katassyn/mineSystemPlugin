@@ -178,6 +178,7 @@ public class SphereManager {
                     .world(BukkitAdapter.adapt(origin.getWorld()))
                     .build()) {
                 Operation operation = new ClipboardHolder(clipboard)
+
                         .createPaste(editSession)
                         .to(BlockVector3.at(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ()))
                         .ignoreAirBlocks(false)

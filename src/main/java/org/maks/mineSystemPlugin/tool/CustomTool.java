@@ -127,11 +127,21 @@ public final class CustomTool {
 
         List<String> lore = meta.getLore();
         if (lore == null) lore = new ArrayList<>();
-        if (lore.size() < 2) {
-            lore.add(" ");
+        int durabilityIndex = findDurabilityIndex(lore);
+        String formatted = formatDurability(cur, max);
+        if (durabilityIndex == -1) {
+            lore.add(formatted);
+        } else {
+            lore.set(durabilityIndex, formatted);
         }
-        lore.set(1, formatDurability(cur, max));
         meta.setLore(lore);
+
+        // ensure CanDestroy is preserved when setting meta
+        var canDestroy = meta.getCanDestroy();
+        if (canDestroy != null && !canDestroy.isEmpty()) {
+            meta.setCanDestroy(new HashSet<>(canDestroy));
+        }
+
         item.setItemMeta(meta);
         return cur <= 0;
     }
@@ -149,19 +159,25 @@ public final class CustomTool {
         List<String> lore = meta.getLore();
         if (lore == null) {
             lore = new ArrayList<>();
-            lore.add(" ");
-            lore.add(" ");
-        } else {
-            while (lore.size() < 2) {
-                lore.add(" ");
-            }
         }
-        lore.add(2, line);
+        int durabilityIndex = findDurabilityIndex(lore);
+        int insertIndex = durabilityIndex == -1 ? lore.size() : durabilityIndex + 1;
+        lore.add(insertIndex, line);
         meta.setLore(lore);
     }
 
     private static String formatDurability(int cur, int max) {
         return ChatColor.GRAY + "Durability: " + cur + "/" + max;
+    }
+
+    private static int findDurabilityIndex(List<String> lore) {
+        for (int i = 0; i < lore.size(); i++) {
+            String stripped = ChatColor.stripColor(lore.get(i));
+            if (stripped != null && stripped.startsWith("Durability:")) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private static String roman(int number) {

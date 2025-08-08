@@ -4,21 +4,33 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemFlag;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.Plugin;
 
-public class CrystalEnchantCommand implements CommandExecutor {
+import org.maks.mineSystemPlugin.tool.CustomTool;
+
+public class CrystalEnchantCommand implements CommandExecutor, Listener {
 
     private static final Material CURRENCY = Material.PRISMARINE_CRYSTALS;
     private final Random random = new Random();
+    private final Plugin plugin;
+
+    public CrystalEnchantCommand(Plugin plugin) {
+        this.plugin = plugin;
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -44,16 +56,76 @@ public class CrystalEnchantCommand implements CommandExecutor {
             return true;
         }
 
-        if (!removeCrystals(player, cost)) {
-            player.sendMessage(ChatColor.RED + "You need " + cost + " crystals.");
-            return true;
+        openMenu(player, item, cost);
+        return true;
+    }
+
+    private void openMenu(Player player, ItemStack tool, int cost) {
+        Inventory inv = Bukkit.createInventory(new EnchantMenu(tool, cost), 27, ChatColor.DARK_AQUA + "Crystal Enchants");
+
+        ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
+        ItemMeta meta = book.getItemMeta();
+        meta.setDisplayName(ChatColor.GREEN + "Purchase Enchant");
+        List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.GRAY + "Cost: " + cost + " crystals");
+        lore.add(ChatColor.GRAY + "Randomly grants Mining Speed");
+        lore.add(ChatColor.GRAY + "or Duplicate (10% both)");
+        lore.add(ChatColor.YELLOW + "Click to buy");
+        meta.setLore(lore);
+        book.setItemMeta(meta);
+        inv.setItem(13, book);
+
+        ItemStack barrier = new ItemStack(Material.BARRIER);
+        ItemMeta bMeta = barrier.getItemMeta();
+        bMeta.setDisplayName(ChatColor.RED + "Cancel");
+        barrier.setItemMeta(bMeta);
+        inv.setItem(22, barrier);
+
+        player.openInventory(inv);
+    }
+
+    @EventHandler
+    private void onInventoryClick(InventoryClickEvent event) {
+        if (!(event.getInventory().getHolder() instanceof EnchantMenu menu)) {
+            return;
+        }
+        event.setCancelled(true);
+        if (!(event.getWhoClicked() instanceof Player player)) {
+            return;
         }
 
-        List<Enchantment> enchants = chooseEnchantments();
-        applyEnchantments(item, enchants);
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked == null || clicked.getType() == Material.AIR) {
+            return;
+        }
 
-        player.sendMessage(ChatColor.GREEN + "Pickaxe enchanted!");
-        return true;
+        if (event.getSlot() == 13) {
+            if (!removeCrystals(player, menu.cost)) {
+                player.sendMessage(ChatColor.RED + "You need " + menu.cost + " crystals.");
+                return;
+            }
+            List<EnchantType> enchants = chooseEnchantments();
+            applyEnchantments(menu.tool, enchants);
+            player.sendMessage(ChatColor.GREEN + "Pickaxe enchanted!");
+            player.closeInventory();
+        } else if (event.getSlot() == 22) {
+            player.closeInventory();
+        }
+    }
+
+    private static class EnchantMenu implements InventoryHolder {
+        private final ItemStack tool;
+        private final int cost;
+
+        EnchantMenu(ItemStack tool, int cost) {
+            this.tool = tool;
+            this.cost = cost;
+        }
+
+        @Override
+        public Inventory getInventory() {
+            return null; // not used
+        }
     }
 
     private int getCost(Material material) {
@@ -86,16 +158,16 @@ public class CrystalEnchantCommand implements CommandExecutor {
         return remaining <= 0;
     }
 
-    private List<Enchantment> chooseEnchantments() {
-        List<Enchantment> result = new ArrayList<>();
+    private List<EnchantType> chooseEnchantments() {
+        List<EnchantType> result = new ArrayList<>();
         if (random.nextDouble() < 0.10) {
-            result.add(Enchantment.DIG_SPEED);
-            result.add(Enchantment.LUCK);
+            result.add(EnchantType.MINING_SPEED);
+            result.add(EnchantType.DUPLICATE);
         } else {
             if (random.nextBoolean()) {
-                result.add(Enchantment.DIG_SPEED);
+                result.add(EnchantType.MINING_SPEED);
             } else {
-                result.add(Enchantment.LUCK);
+                result.add(EnchantType.DUPLICATE);
             }
         }
         return result;
@@ -108,29 +180,19 @@ public class CrystalEnchantCommand implements CommandExecutor {
         return 3;
     }
 
-    private void applyEnchantments(ItemStack item, List<Enchantment> enchantments) {
-        ItemMeta meta = item.getItemMeta();
-        List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
-
-        for (Enchantment enchantment : enchantments) {
+    private void applyEnchantments(ItemStack item, List<EnchantType> enchantments) {
+        for (EnchantType enchantment : enchantments) {
             int level = randomLevel();
-            meta.addEnchant(enchantment, level, true);
-            lore.add(ChatColor.GRAY + hiddenName(enchantment) + " " + level);
+            switch (enchantment) {
+                case MINING_SPEED -> CustomTool.addMiningSpeed(item, level);
+                case DUPLICATE -> CustomTool.addDuplicate(plugin, item, level);
+            }
         }
-
-        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-        meta.setLore(lore);
-        item.setItemMeta(meta);
     }
 
-    private String hiddenName(Enchantment enchantment) {
-        if (enchantment.equals(Enchantment.DIG_SPEED)) {
-            return "Efficiency";
-        }
-        if (enchantment.equals(Enchantment.LUCK)) {
-            return "Luck";
-        }
-        return enchantment.getKey().getKey();
+    private enum EnchantType {
+        MINING_SPEED,
+        DUPLICATE
     }
 }
 

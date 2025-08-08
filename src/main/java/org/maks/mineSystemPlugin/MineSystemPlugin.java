@@ -79,7 +79,7 @@ public final class MineSystemPlugin extends JavaPlugin {
         }
 
         getCommand("repair").setExecutor(new RepairCommand(this));
-        getCommand("crystalenchant").setExecutor(new CrystalEnchantCommand());
+        getCommand("crystalenchant").setExecutor(new CrystalEnchantCommand(this));
         getCommand("sphere").setExecutor(new SphereCommand());
         getCommand("spawnsphere").setExecutor(this);
 

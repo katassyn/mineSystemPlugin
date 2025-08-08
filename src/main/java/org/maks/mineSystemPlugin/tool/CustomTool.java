@@ -132,6 +132,13 @@ public final class CustomTool {
         }
         lore.set(1, formatDurability(cur, max));
         meta.setLore(lore);
+
+        // Re-apply CanDestroy attribute to ensure it persists after lore update
+        Set<Material> destroy = meta.getCanDestroy();
+        if (destroy != null && !destroy.isEmpty()) {
+            meta.setCanDestroy(new HashSet<>(destroy));
+        }
+
         item.setItemMeta(meta);
         return cur <= 0;
     }

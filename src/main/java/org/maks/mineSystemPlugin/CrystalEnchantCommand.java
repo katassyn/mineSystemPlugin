@@ -1,7 +1,5 @@
 package org.maks.mineSystemPlugin;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 import org.bukkit.ChatColor;
@@ -9,16 +7,25 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.Plugin;
+import org.maks.mineSystemPlugin.tool.CustomTool;
 
+/**
+ * Handles enchanting pickaxes using crystal currency. Enchants are randomly
+ * selected between Mining Speed, Duplicate or both (10% chance). Levels are
+ * distributed as 70% for I, 25% for II and 5% for III.
+ */
 public class CrystalEnchantCommand implements CommandExecutor {
 
     private static final Material CURRENCY = Material.PRISMARINE_CRYSTALS;
     private final Random random = new Random();
+    private final Plugin plugin;
+
+    public CrystalEnchantCommand(Plugin plugin) {
+        this.plugin = plugin;
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -49,8 +56,24 @@ public class CrystalEnchantCommand implements CommandExecutor {
             return true;
         }
 
-        List<Enchantment> enchants = chooseEnchantments();
-        applyEnchantments(item, enchants);
+        double roll = random.nextDouble();
+        boolean addSpeed = false;
+        boolean addDuplicate = false;
+        if (roll < 0.10) {
+            addSpeed = true;
+            addDuplicate = true;
+        } else if (random.nextBoolean()) {
+            addSpeed = true;
+        } else {
+            addDuplicate = true;
+        }
+
+        if (addSpeed) {
+            CustomTool.addMiningSpeed(item, randomLevel());
+        }
+        if (addDuplicate) {
+            CustomTool.addDuplicate(plugin, item, randomLevel());
+        }
 
         player.sendMessage(ChatColor.GREEN + "Pickaxe enchanted!");
         return true;
@@ -86,51 +109,10 @@ public class CrystalEnchantCommand implements CommandExecutor {
         return remaining <= 0;
     }
 
-    private List<Enchantment> chooseEnchantments() {
-        List<Enchantment> result = new ArrayList<>();
-        if (random.nextDouble() < 0.10) {
-            result.add(Enchantment.DIG_SPEED);
-            result.add(Enchantment.LUCK);
-        } else {
-            if (random.nextBoolean()) {
-                result.add(Enchantment.DIG_SPEED);
-            } else {
-                result.add(Enchantment.LUCK);
-            }
-        }
-        return result;
-    }
-
     private int randomLevel() {
         double roll = random.nextDouble();
         if (roll < 0.70) return 1;
         if (roll < 0.95) return 2;
         return 3;
     }
-
-    private void applyEnchantments(ItemStack item, List<Enchantment> enchantments) {
-        ItemMeta meta = item.getItemMeta();
-        List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
-
-        for (Enchantment enchantment : enchantments) {
-            int level = randomLevel();
-            meta.addEnchant(enchantment, level, true);
-            lore.add(ChatColor.GRAY + hiddenName(enchantment) + " " + level);
-        }
-
-        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-        meta.setLore(lore);
-        item.setItemMeta(meta);
-    }
-
-    private String hiddenName(Enchantment enchantment) {
-        if (enchantment.equals(Enchantment.DIG_SPEED)) {
-            return "Efficiency";
-        }
-        if (enchantment.equals(Enchantment.LUCK)) {
-            return "Luck";
-        }
-        return enchantment.getKey().getKey();
-    }
 }
-

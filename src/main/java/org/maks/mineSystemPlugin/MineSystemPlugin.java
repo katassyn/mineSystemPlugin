@@ -2,6 +2,11 @@ package org.maks.mineSystemPlugin;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.maks.mineSystemPlugin.database.DatabaseManager;
+import org.maks.mineSystemPlugin.database.dao.PickaxesDao;
+import org.maks.mineSystemPlugin.database.dao.PlayersDao;
+import org.maks.mineSystemPlugin.database.dao.QuestsDao;
+import org.maks.mineSystemPlugin.database.dao.SpheresDao;
 import org.maks.mineSystemPlugin.managers.PickaxeManager;
 import org.maks.mineSystemPlugin.managers.SphereManager;
 import org.maks.mineSystemPlugin.managers.StaminaManager;
@@ -11,6 +16,11 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public final class MineSystemPlugin extends JavaPlugin {
+    private DatabaseManager database;
+    private PlayersDao playersDao;
+    private PickaxesDao pickaxesDao;
+    private QuestsDao questsDao;
+    private SpheresDao spheresDao;
 
     private Connection connection;
     private StaminaManager staminaManager;
@@ -20,6 +30,12 @@ public final class MineSystemPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        database = new DatabaseManager(this);
+        playersDao = new PlayersDao(database);
+        pickaxesDao = new PickaxesDao(database);
+        questsDao = new QuestsDao(database);
+        spheresDao = new SpheresDao(database);
+
         saveDefaultConfig();
         FileConfiguration config = getConfig();
 
@@ -45,6 +61,26 @@ public final class MineSystemPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (database != null) {
+            database.close();
+        }
+    }
+
+    public PlayersDao getPlayersDao() {
+        return playersDao;
+    }
+
+    public PickaxesDao getPickaxesDao() {
+        return pickaxesDao;
+    }
+
+    public QuestsDao getQuestsDao() {
+        return questsDao;
+    }
+
+    public SpheresDao getSpheresDao() {
+        return spheresDao;
+
         if (staminaManager != null) {
             staminaManager.saveAll();
         }
@@ -90,5 +126,7 @@ public final class MineSystemPlugin extends JavaPlugin {
 
     public MobSpawner getMobSpawner() {
         return mobSpawner;
+
     }
 }
+

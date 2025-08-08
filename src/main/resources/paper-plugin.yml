@@ -3,6 +3,9 @@ version: '1.0-SNAPSHOT'
 main: org.maks.mineSystemPlugin.MineSystemPlugin
 api-version: '1.20'
 commands:
+  repair:
+    description: Repair the item in your main hand using Crystals.
+    usage: /repair
   crystalenchant:
     description: Enchants a pickaxe using crystals
     usage: /crystalenchant

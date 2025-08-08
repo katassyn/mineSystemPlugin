@@ -35,11 +35,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 
+/**
+ * Main plugin entry point. Registers the repair command and loads the
+ * configuration containing the base repair cost.
+ */
 public final class MineSystemPlugin extends JavaPlugin {
     private SpecialBlockListener listener;
 
     @Override
     public void onEnable() {
+        // ensure the config file exists
+        saveDefaultConfig();
+
+        // register the repair command
+        getCommand("repair").setExecutor(new RepairCommand(this));
         listener = new SpecialBlockListener();
         getServer().getPluginManager().registerEvents(listener, this);
     private DatabaseManager database;

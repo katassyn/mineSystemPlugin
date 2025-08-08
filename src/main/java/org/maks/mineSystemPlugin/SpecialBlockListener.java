@@ -1,24 +1,28 @@
 package org.maks.mineSystemPlugin;
 
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitTask;
 import org.maks.mineSystemPlugin.item.CustomItems;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class SpecialBlockListener implements Listener {
+    private final Plugin plugin;
     private final Map<Location, Integer> hitMap = new HashMap<>();
+    private final Map<Location, ArmorStand> holograms = new HashMap<>();
+    private final Map<Location, BukkitTask> hideTasks = new HashMap<>();
     private final Random random = new Random();
+
+    public SpecialBlockListener(Plugin plugin) {
+        this.plugin = plugin;
+    }
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
@@ -26,36 +30,105 @@ public class SpecialBlockListener implements Listener {
         Material type = block.getType();
 
         int requiredHits;
+        int interval;
+        String display;
         switch (type) {
-            case MOSS_BLOCK -> requiredHits = 75;
-            case BONE_BLOCK -> requiredHits = 100;
-            case AMETHYST_BLOCK -> requiredHits = 25;
+            case MOSS_BLOCK -> { requiredHits = 75; interval = 25; display = "Moss Block"; }
+            case BONE_BLOCK -> { requiredHits = 100; interval = 25; display = "Bone Block"; }
+            case AMETHYST_BLOCK -> { requiredHits = 25; interval = 5; display = "Amethyst Block"; }
             default -> { return; }
         }
 
-        Location location = block.getLocation();
-        int hits = hitMap.getOrDefault(location, 0) + 1;
+        Location loc = block.getLocation();
+        int hits = hitMap.getOrDefault(loc, 0) + 1;
+        int remaining = requiredHits - hits;
+        hitMap.put(loc, hits);
+
+        showHologram(loc, display, remaining, requiredHits);
+
+        event.setCancelled(true);
 
         if (hits < requiredHits) {
-            hitMap.put(location, hits);
-            event.setCancelled(true);
+            if (hits % interval == 0) {
+                int amount = random.nextInt(4) + 1;
+                for (int i = 0; i < amount; i++) {
+                    if (type == Material.MOSS_BLOCK) {
+                        block.getWorld().dropItemNaturally(loc, createLeaf(randomTier()));
+                    } else if (type == Material.BONE_BLOCK) {
+                        block.getWorld().dropItemNaturally(loc, createBone(randomTier()));
+                    } else {
+                        block.getWorld().dropItemNaturally(loc, createCrystal());
+                    }
+                }
+            }
             return;
         }
 
-        hitMap.remove(location);
-        event.setCancelled(true);
+        hitMap.remove(loc);
         block.setType(Material.AIR);
+        removeHologram(loc);
         World world = block.getWorld();
 
         if (type == Material.MOSS_BLOCK) {
-            world.dropItemNaturally(location, createLeaf(randomTier()));
+            world.dropItemNaturally(loc, createLeaf(randomTier()));
         } else if (type == Material.BONE_BLOCK) {
-            world.dropItemNaturally(location, createBone(randomTier()));
+            world.dropItemNaturally(loc, createBone(randomTier()));
         } else if (type == Material.AMETHYST_BLOCK) {
             for (ItemStack stack : createCrystals()) {
-                world.dropItemNaturally(location, stack);
+                world.dropItemNaturally(loc, stack);
             }
         }
+    }
+
+    private void showHologram(Location loc, String name, int remaining, int max) {
+        ArmorStand stand = holograms.computeIfAbsent(loc, l ->
+                loc.getWorld().spawn(loc.clone().add(0.5, 0, 0.5), ArmorStand.class, as -> {
+                    as.setInvisible(true);
+                    as.setMarker(true);
+                    as.setGravity(false);
+                })
+        );
+        if (remaining <= 0) {
+            return;
+        }
+        stand.setCustomName(formatName(name, remaining, max));
+        stand.setCustomNameVisible(true);
+        BukkitTask task = hideTasks.remove(loc);
+        if (task != null) {
+            task.cancel();
+        }
+        hideTasks.put(loc, Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            ArmorStand as = holograms.get(loc);
+            if (as != null) {
+                as.setCustomNameVisible(false);
+            }
+            hideTasks.remove(loc);
+        }, 60L));
+    }
+
+    private void removeHologram(Location loc) {
+        ArmorStand stand = holograms.remove(loc);
+        if (stand != null) {
+            stand.remove();
+        }
+        BukkitTask task = hideTasks.remove(loc);
+        if (task != null) {
+            task.cancel();
+        }
+    }
+
+    private String formatName(String name, int remaining, int max) {
+        return ChatColor.YELLOW + name + " " + ChatColor.RED + remaining + "/" + max + " " + progressBar(remaining, max);
+    }
+
+    private String progressBar(int remaining, int max) {
+        int bars = 10;
+        int filled = (int) Math.round((double) remaining / max * bars);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < bars; i++) {
+            sb.append(i < filled ? ChatColor.GREEN : ChatColor.DARK_GRAY).append("|");
+        }
+        return sb.toString();
     }
 
     private int randomTier() {
@@ -79,15 +152,6 @@ public class SpecialBlockListener implements Listener {
         return item != null ? item : new ItemStack(Material.BRICK);
     }
 
-    private String roman(int tier) {
-        return switch (tier) {
-            case 1 -> "I";
-            case 2 -> "II";
-            case 3 -> "III";
-            default -> "I";
-        };
-    }
-
     private List<ItemStack> createCrystals() {
         int amount = random.nextInt(3) + 1; // 1-3
         List<ItemStack> list = new ArrayList<>();
@@ -98,5 +162,14 @@ public class SpecialBlockListener implements Listener {
             }
         }
         return list;
+    }
+
+    private String roman(int tier) {
+        return switch (tier) {
+            case 1 -> "I";
+            case 2 -> "II";
+            case 3 -> "III";
+            default -> "I";
+        };
     }
 }

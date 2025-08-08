@@ -10,13 +10,14 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import org.maks.mineSystemPlugin.command.LootCommand;
-import org.maks.mineSystemPlugin.command.SphereCommand;
 import org.maks.mineSystemPlugin.command.MineCommand;
+import org.maks.mineSystemPlugin.command.SpecialLootCommand;
 import org.maks.mineSystemPlugin.managers.PickaxeManager;
 import org.maks.mineSystemPlugin.stamina.StaminaManager;
 import org.maks.mineSystemPlugin.database.DatabaseManager;
 import org.maks.mineSystemPlugin.repository.QuestRepository;
 import org.maks.mineSystemPlugin.repository.LootRepository;
+import org.maks.mineSystemPlugin.repository.SpecialLootRepository;
 import org.maks.mineSystemPlugin.sphere.SphereManager;
 import org.maks.mineSystemPlugin.sphere.SphereListener;
 import org.maks.mineSystemPlugin.listener.BlockBreakListener;
@@ -26,6 +27,7 @@ import org.maks.mineSystemPlugin.SpecialBlockListener;
 import org.maks.mineSystemPlugin.CrystalEnchantCommand;
 import org.maks.mineSystemPlugin.RepairCommand;
 import org.maks.mineSystemPlugin.LootManager;
+import org.maks.mineSystemPlugin.SpecialLootManager;
 
 import java.time.Duration;
 import org.maks.mineSystemPlugin.sphere.Tier;
@@ -45,6 +47,8 @@ public final class MineSystemPlugin extends JavaPlugin {
     private DatabaseManager database;
     private QuestRepository questRepository;
     private LootRepository lootRepository;
+    private SpecialLootManager specialLootManager;
+    private SpecialLootRepository specialLootRepository;
 
     private static final Map<String, Integer> ORE_DURABILITY = Map.ofEntries(
             Map.entry("Hematite", 40),
@@ -86,26 +90,32 @@ public final class MineSystemPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
         database = new DatabaseManager(this);
         questRepository = new QuestRepository(database);
 
         staminaManager = new StaminaManager(this, 100, Duration.ofHours(12), questRepository);
-        sphereManager = new SphereManager(this, staminaManager);
-        pickaxeManager = new PickaxeManager(this);
         lootManager = new LootManager();
         lootRepository = new LootRepository(database);
         lootManager.setProbabilities(lootRepository.load().join());
+        specialLootManager = new SpecialLootManager();
+        specialLootRepository = new SpecialLootRepository(database);
+        specialLootRepository.loadAll().join().forEach(specialLootManager::setLoot);
+        sphereManager = new SphereManager(this, staminaManager);
+        pickaxeManager = new PickaxeManager(this);
         getCommand("loot").setExecutor(new LootCommand(this, lootRepository, lootManager));
+        getCommand("specialloot").setExecutor(new SpecialLootCommand(this, specialLootRepository, specialLootManager));
 
-        getCommand("repair").setExecutor(new RepairCommand(this));
+        RepairCommand repairCommand = new RepairCommand(this);
+        getCommand("repair").setExecutor(repairCommand);
+        registerListener(repairCommand);
         CrystalEnchantCommand ceCommand = new CrystalEnchantCommand(this);
         getCommand("crystalenchant").setExecutor(ceCommand);
         registerListener(ceCommand);
-        getCommand("sphere").setExecutor(new SphereCommand());
-        getCommand("mine").setExecutor(new MineCommand(this));
+        getCommand("mine").setExecutor(new MineCommand(this, sphereManager));
         getCommand("spawnsphere").setExecutor(this);
 
-        registerListener(new SpecialBlockListener());
+        registerListener(new SpecialBlockListener(this));
         registerListener(new SphereListener(sphereManager));
         registerListener(new BlockBreakListener(this));
         registerListener(new OreBreakListener(this));
@@ -137,7 +147,7 @@ public final class MineSystemPlugin extends JavaPlugin {
                 return true;
             }
             if (sphereManager != null) {
-                sphereManager.createSphere(player);
+                sphereManager.createSphere(player, false);
             }
             return true;
         }
@@ -146,6 +156,14 @@ public final class MineSystemPlugin extends JavaPlugin {
 
     public SphereManager getSphereManager() {
         return sphereManager;
+    }
+
+    public LootManager getLootManager() {
+        return lootManager;
+    }
+
+    public SpecialLootManager getSpecialLootManager() {
+        return specialLootManager;
     }
 
     public boolean isCustomOre(Material material) {

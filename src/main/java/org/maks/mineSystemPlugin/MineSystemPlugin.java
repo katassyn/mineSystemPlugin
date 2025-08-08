@@ -1,38 +1,83 @@
 package org.maks.mineSystemPlugin;
 
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.maks.mineSystemPlugin.command.JoinSphereCommand;
-import org.maks.mineSystemPlugin.mob.MobSpawner;
-import org.maks.mineSystemPlugin.sphere.SphereManager;
-import org.maks.mineSystemPlugin.stamina.StaminaManager;
+import org.maks.mineSystemPlugin.managers.PickaxeManager;
+import org.maks.mineSystemPlugin.managers.SphereManager;
+import org.maks.mineSystemPlugin.managers.StaminaManager;
 
-import java.time.Duration;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 public final class MineSystemPlugin extends JavaPlugin {
 
+    private Connection connection;
     private StaminaManager staminaManager;
     private SphereManager sphereManager;
-    private MobSpawner mobSpawner;
+    private PickaxeManager pickaxeManager;
+
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        FileConfiguration config = getConfig();
 
-        int maxStamina = getConfig().getInt("maxStamina", 100);
-        int sphereLimit = getConfig().getInt("sphereLimit", 20);
+        try {
+            String host = config.getString("mysql.host");
+            int port = config.getInt("mysql.port");
+            String database = config.getString("mysql.database");
+            String username = config.getString("mysql.username");
+            String password = config.getString("mysql.password");
+            String url = "jdbc:mysql://" + host + ":" + port + "/" + database + "?useSSL=false&autoReconnect=true";
 
-        this.staminaManager = new StaminaManager(this, maxStamina, Duration.ofHours(12));
-        this.mobSpawner = new MobSpawner(this);
-        this.sphereManager = new SphereManager(this, sphereLimit, mobSpawner);
+            connection = DriverManager.getConnection(url, username, password);
 
-        if (getCommand("sphere") != null) {
-            getCommand("sphere").setExecutor(new JoinSphereCommand(this));
+            staminaManager = new StaminaManager(this);
+            sphereManager = new SphereManager(this);
+            pickaxeManager = new PickaxeManager(this);
+        } catch (SQLException e) {
+            getLogger().severe("Failed to connect to MySQL: " + e.getMessage());
+            getServer().getPluginManager().disablePlugin(this);
+
         }
     }
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+        if (staminaManager != null) {
+            staminaManager.saveAll();
+        }
+        if (sphereManager != null) {
+            sphereManager.saveAll();
+        }
+        if (pickaxeManager != null) {
+            pickaxeManager.saveAll();
+        }
+
+        if (connection != null) {
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                getLogger().severe("Failed to close MySQL connection: " + e.getMessage());
+            }
+        }
+    }
+
+    public Connection getConnection() {
+        return connection;
+    }
+
+    public StaminaManager getStaminaManager() {
+        return staminaManager;
+    }
+
+    public SphereManager getSphereManager() {
+        return sphereManager;
+    }
+
+    public PickaxeManager getPickaxeManager() {
+        return pickaxeManager;
     }
 
     public StaminaManager getStaminaManager() {

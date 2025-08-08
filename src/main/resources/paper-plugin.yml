@@ -1,7 +1,5 @@
-name: mineSystemPlugin
+name: MineSystemPlugin
 version: '1.0-SNAPSHOT'
 main: org.maks.mineSystemPlugin.MineSystemPlugin
 api-version: '1.20'
-commands:
-  sphere:
-    description: Enter a mining sphere (test command)
+

@@ -40,7 +40,7 @@ public class CrystalEnchantCommand implements CommandExecutor, Listener {
         }
 
         ItemStack item = player.getInventory().getItemInMainHand();
-        if (item.getType() == Material.AIR) {
+        if (item.getType() == Material.AIR || !item.getType().name().endsWith("_PICKAXE")) {
             player.sendMessage(ChatColor.RED + "Hold a pickaxe in your main hand.");
             return true;
         }
@@ -62,6 +62,14 @@ public class CrystalEnchantCommand implements CommandExecutor, Listener {
 
     private void openMenu(Player player, ItemStack tool, int cost) {
         Inventory inv = Bukkit.createInventory(new EnchantMenu(tool, cost), 27, ChatColor.DARK_AQUA + "Crystal Enchants");
+
+        ItemStack filler = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
+        ItemMeta fMeta = filler.getItemMeta();
+        fMeta.setDisplayName(" ");
+        filler.setItemMeta(fMeta);
+        for (int i = 0; i < inv.getSize(); i++) {
+            inv.setItem(i, filler);
+        }
 
         ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
         ItemMeta meta = book.getItemMeta();
@@ -184,7 +192,7 @@ public class CrystalEnchantCommand implements CommandExecutor, Listener {
         for (EnchantType enchantment : enchantments) {
             int level = randomLevel();
             switch (enchantment) {
-                case MINING_SPEED -> CustomTool.addMiningSpeed(item, level);
+                case MINING_SPEED -> CustomTool.addMiningSpeed(plugin, item, level);
                 case DUPLICATE -> CustomTool.addDuplicate(plugin, item, level);
             }
         }

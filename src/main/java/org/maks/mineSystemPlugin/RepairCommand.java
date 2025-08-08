@@ -4,12 +4,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -21,7 +27,7 @@ import org.bukkit.ChatColor;
  * Command that repairs the item held in the player's main hand. The cost is
  * calculated based on the material tier and enchantments of the item.
  */
-public class RepairCommand implements CommandExecutor {
+public class RepairCommand implements CommandExecutor, Listener {
     private final MineSystemPlugin plugin;
 
     public RepairCommand(MineSystemPlugin plugin) {
@@ -36,21 +42,48 @@ public class RepairCommand implements CommandExecutor {
         }
 
         ItemStack item = player.getInventory().getItemInMainHand();
-        if (item == null || item.getType().isAir()) {
-            player.sendMessage("Hold the item you wish to repair in your main hand.");
+        if (item == null || item.getType().isAir() || !item.getType().name().endsWith("_PICKAXE")) {
+            player.sendMessage("Hold the pickaxe you wish to repair in your main hand.");
             return true;
         }
 
         int cost = calculateCost(item);
-        if (!hasCrystals(player, cost)) {
-            player.sendMessage("Not enough Crystals. Required: " + cost);
+        if (cost <= 0) {
+            player.sendMessage("That pickaxe doesn't need repairing.");
             return true;
         }
 
-        removeCrystals(player, cost);
-        repairItem(item);
-        player.sendMessage("Item repaired for " + cost + " Crystals.");
+        openMenu(player, item, cost);
         return true;
+    }
+
+    private void openMenu(Player player, ItemStack tool, int cost) {
+        Inventory inv = Bukkit.createInventory(new RepairMenu(tool, cost), 27, ChatColor.DARK_GREEN + "Repair Pickaxe");
+
+        ItemStack filler = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
+        ItemMeta fMeta = filler.getItemMeta();
+        fMeta.setDisplayName(" ");
+        filler.setItemMeta(fMeta);
+        for (int i = 0; i < inv.getSize(); i++) {
+            inv.setItem(i, filler);
+        }
+
+        ItemStack anvil = new ItemStack(Material.ANVIL);
+        ItemMeta aMeta = anvil.getItemMeta();
+        aMeta.setDisplayName(ChatColor.GREEN + "Repair");
+        List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.GRAY + "Cost: " + cost + " crystals");
+        aMeta.setLore(lore);
+        anvil.setItemMeta(aMeta);
+        inv.setItem(13, anvil);
+
+        ItemStack barrier = new ItemStack(Material.BARRIER);
+        ItemMeta bMeta = barrier.getItemMeta();
+        bMeta.setDisplayName(ChatColor.RED + "Cancel");
+        barrier.setItemMeta(bMeta);
+        inv.setItem(22, barrier);
+
+        player.openInventory(inv);
     }
 
     private int calculateCost(ItemStack item) {
@@ -159,6 +192,50 @@ public class RepairCommand implements CommandExecutor {
         lore.add(ChatColor.GRAY + "Durability: " + maxDurability + "/" + maxDurability);
         meta.setLore(lore);
         item.setItemMeta(meta);
+    }
+
+    @EventHandler
+    private void onInventoryClick(InventoryClickEvent event) {
+        if (!(event.getInventory().getHolder() instanceof RepairMenu menu)) {
+            return;
+        }
+        event.setCancelled(true);
+        if (!(event.getWhoClicked() instanceof Player player)) {
+            return;
+        }
+
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked == null || clicked.getType() == Material.AIR) {
+            return;
+        }
+
+        if (event.getSlot() == 13) {
+            if (!hasCrystals(player, menu.cost)) {
+                player.sendMessage(ChatColor.RED + "Not enough Crystals. Required: " + menu.cost);
+                return;
+            }
+            removeCrystals(player, menu.cost);
+            repairItem(menu.tool);
+            player.sendMessage(ChatColor.GREEN + "Item repaired for " + menu.cost + " Crystals.");
+            player.closeInventory();
+        } else if (event.getSlot() == 22) {
+            player.closeInventory();
+        }
+    }
+
+    private static class RepairMenu implements InventoryHolder {
+        private final ItemStack tool;
+        private final int cost;
+
+        RepairMenu(ItemStack tool, int cost) {
+            this.tool = tool;
+            this.cost = cost;
+        }
+
+        @Override
+        public Inventory getInventory() {
+            return null; // not used
+        }
     }
 }
 

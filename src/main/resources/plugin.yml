@@ -7,9 +7,6 @@ commands:
     description: Manage loot configuration
     usage: /loot add <item> <chance>
     permission: minesystemplugin.loot
-  sphere:
-    description: Create a sphere
-    usage: /sphere <type>
   mine:
     description: Open the mine selection menu
     usage: /mine
@@ -23,3 +20,6 @@ commands:
   spawnsphere:
     description: Spawns a mining sphere for testing
     usage: /spawnsphere
+  specialloot:
+    description: Edit loot for special schematics
+    usage: /specialloot <schematic>

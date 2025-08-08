@@ -12,7 +12,7 @@ import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.regions.CuboidRegion;
-import com.sk89q.worldedit.session.EditSession;
+import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.world.block.BlockState;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -172,7 +172,10 @@ public class SphereManager {
             Clipboard clipboard = reader.read();
             Map<BlockVector3, OreVariant> variants = replacePlaceholders(clipboard, premium);
 
-            try (EditSession editSession = WorldEdit.getInstance().newEditSession(BukkitAdapter.adapt(origin.getWorld()))) {
+            try (EditSession editSession = WorldEdit.getInstance()
+                    .newEditSessionBuilder()
+                    .world(BukkitAdapter.adapt(origin.getWorld()))
+                    .build()) {
                 Operation operation = new com.sk89q.worldedit.extent.clipboard.ClipboardHolder(clipboard)
                         .createPaste(editSession)
                         .to(BlockVector3.at(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ()))

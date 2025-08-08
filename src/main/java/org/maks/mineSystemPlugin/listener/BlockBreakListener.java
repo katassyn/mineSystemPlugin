@@ -7,7 +7,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.player.Player;
+import org.bukkit.entity.Player;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
 import org.maks.mineSystemPlugin.events.OreMinedEvent;
 import org.maks.mineSystemPlugin.item.CustomItems;

@@ -39,6 +39,10 @@
             <url>https://mvn.intellectualsites.com/content/repositories/snapshots/</url>
         </repository>
         <repository>
+            <id>md-5-public</id>
+            <url>https://repo.md-5.net/content/groups/public/</url>
+        </repository>
+        <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>

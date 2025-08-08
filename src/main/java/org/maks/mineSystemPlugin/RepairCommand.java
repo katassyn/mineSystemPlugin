@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -12,6 +13,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.ChatColor;
 
 /**
  * Command that repairs the item held in the player's main hand. The cost is
@@ -50,7 +54,7 @@ public class RepairCommand implements CommandExecutor {
     }
 
     private int calculateCost(ItemStack item) {
-        int base = plugin.getConfig().getInt("base-cost", 32);
+        int base = plugin.getConfig().getInt("baseRepairCost", 32);
         int tierIndex = materialTier(item.getType());
         int materialCost = base * (1 << tierIndex);
 
@@ -64,6 +68,27 @@ public class RepairCommand implements CommandExecutor {
         int levelSum = enchants.values().stream().mapToInt(Integer::intValue).sum();
         if (levelSum < 1) {
             levelSum = 1;
+        }
+
+        ItemMeta meta = item.getItemMeta();
+        if (meta instanceof Damageable damageable) {
+            int missing = damageable.getDamage();
+            int max = item.getType().getMaxDurability();
+            if (missing <= 0 || max <= 0) return 0;
+            double fraction = missing / (double) max;
+            return (int) Math.ceil(materialCost * multiplier * levelSum * fraction);
+        }
+
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        NamespacedKey maxKey = new NamespacedKey(plugin, "max_durability");
+        NamespacedKey curKey = new NamespacedKey(plugin, "durability");
+        Integer max = pdc.get(maxKey, PersistentDataType.INTEGER);
+        Integer cur = pdc.get(curKey, PersistentDataType.INTEGER);
+        if (max != null && cur != null && max > 0) {
+            int missing = max - cur;
+            if (missing <= 0) return 0;
+            double fraction = missing / (double) max;
+            return (int) Math.ceil(materialCost * multiplier * levelSum * fraction);
         }
 
         return materialCost * multiplier * levelSum;
@@ -112,15 +137,28 @@ public class RepairCommand implements CommandExecutor {
 
     private void repairItem(ItemStack item) {
         ItemMeta meta = item.getItemMeta();
+        if (meta == null) {
+            return;
+        }
+
         if (meta instanceof Damageable damageable) {
             damageable.setDamage(0);
-            List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
-            lore.removeIf(line -> line.startsWith("Durability:"));
-            int max = item.getType().getMaxDurability();
-            lore.add("Durability: " + max + "/" + max);
-            meta.setLore(lore);
-            item.setItemMeta(meta);
         }
+
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        NamespacedKey maxKey = new NamespacedKey(plugin, "max_durability");
+        NamespacedKey curKey = new NamespacedKey(plugin, "durability");
+        Integer max = pdc.get(maxKey, PersistentDataType.INTEGER);
+        if (max != null) {
+            pdc.set(curKey, PersistentDataType.INTEGER, max);
+        }
+
+        List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
+        lore.removeIf(line -> ChatColor.stripColor(line).startsWith("Durability:"));
+        int maxDurability = max != null ? max : item.getType().getMaxDurability();
+        lore.add(ChatColor.GRAY + "Durability: " + maxDurability + "/" + maxDurability);
+        meta.setLore(lore);
+        item.setItemMeta(meta);
     }
 }
 

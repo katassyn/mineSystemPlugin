@@ -6,8 +6,7 @@ public final class MineSystemPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        // Plugin startup logic
-
+        getCommand("crystalenchant").setExecutor(new CrystalEnchantCommand());
     }
 
     @Override

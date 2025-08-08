@@ -7,12 +7,13 @@ import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
+import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.regions.CuboidRegion;
-import com.sk89q.worldedit.session.EditSession;
+import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.world.block.BlockState;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -172,8 +173,11 @@ public class SphereManager {
             Clipboard clipboard = reader.read();
             Map<BlockVector3, OreVariant> variants = replacePlaceholders(clipboard, premium);
 
-            try (EditSession editSession = WorldEdit.getInstance().newEditSession(BukkitAdapter.adapt(origin.getWorld()))) {
-                Operation operation = new com.sk89q.worldedit.extent.clipboard.ClipboardHolder(clipboard)
+            try (EditSession editSession = WorldEdit.getInstance()
+                    .newEditSessionBuilder()
+                    .world(BukkitAdapter.adapt(origin.getWorld()))
+                    .build()) {
+                Operation operation = new ClipboardHolder(clipboard)
                         .createPaste(editSession)
                         .to(BlockVector3.at(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ()))
                         .ignoreAirBlocks(false)
@@ -218,7 +222,7 @@ public class SphereManager {
             if (state.getBlockType().getId().equals("minecraft:white_wool")) {
                 Material mat = randomBaseOre(premium);
                 Tier tier = Tier.random(premium);
-                clipboard.setBlock(vec, BukkitAdapter.adapt(mat).createBlockState());
+                clipboard.setBlock(vec, BukkitAdapter.asBlockType(mat).getDefaultState());
                 OreVariant variant = ORE_VARIANTS.get(mat)[tier.ordinal()];
                 variants.put(vec, variant);
             }
@@ -329,8 +333,10 @@ public class SphereManager {
     private void spawnConfiguredMobs(String schematic, Region region, World world) {
         List<Map<?, ?>> entries = ((JavaPlugin) plugin).getConfig().getMapList("mobs." + schematic);
         for (Map<?, ?> entry : entries) {
-            String mythic = (String) entry.get("mythic_id");
-            Number amtNum = (Number) entry.getOrDefault("amount", 1);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) entry;
+            String mythic = (String) map.get("mythic_id");
+            Number amtNum = (Number) map.getOrDefault("amount", 1);
             int amount = amtNum.intValue();
             for (int i = 0; i < amount; i++) {
                 Location loc = randomSpawnLocation(region, world);

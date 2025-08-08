@@ -16,6 +16,7 @@ import com.sk89q.worldedit.session.EditSession;
 import com.sk89q.worldedit.world.block.BlockState;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -30,19 +31,39 @@ import java.util.*;
  */
 public class SphereManager {
 
-    private static final int MAX_SPHERES = 20;
     private static final long LIFE_TIME_TICKS = 10L * 60L * 20L; // 10 minutes
 
     private final Plugin plugin;
     private final Map<UUID, Sphere> active = new HashMap<>();
     private final Random random = new Random();
+    private final int maxSpheres;
+    private final List<Material> oreMaterials = new ArrayList<>();
 
     public SphereManager(Plugin plugin) {
         this.plugin = plugin;
+        this.maxSpheres = plugin.getConfig().getInt("sphereLimit", 20);
+        List<String> configured = plugin.getConfig().getStringList("sphereOres");
+        for (String name : configured) {
+            Material mat = Material.matchMaterial(name);
+            if (mat != null) {
+                oreMaterials.add(mat);
+            }
+        }
+        if (oreMaterials.isEmpty()) {
+            oreMaterials.addAll(Arrays.asList(
+                    Material.COAL_ORE,
+                    Material.IRON_ORE,
+                    Material.LAPIS_ORE,
+                    Material.REDSTONE_ORE,
+                    Material.GOLD_ORE,
+                    Material.EMERALD_ORE,
+                    Material.DIAMOND_ORE
+            ));
+        }
     }
 
     public boolean createSphere(Player player) {
-        if (active.size() >= MAX_SPHERES) {
+        if (active.size() >= maxSpheres) {
             player.sendMessage("Sphere limit reached");
             return false;
         }
@@ -104,11 +125,9 @@ public class SphereManager {
         Region region = clipboard.getRegion();
         for (BlockVector3 vec : region) {
             BlockState state = clipboard.getBlock(vec);
-            String id = state.getBlockType().getId();
-            if (id.endsWith("_wool")) {
-                OreType ore = OreType.random();
-                Tier.random(); // tier is chosen but not yet used
-                clipboard.setBlock(vec, BukkitAdapter.adapt(ore.getMaterial()).createBlockState());
+            if (state.getBlockType().getId().equals("minecraft:white_wool")) {
+                Material mat = oreMaterials.get(random.nextInt(oreMaterials.size()));
+                clipboard.setBlock(vec, BukkitAdapter.adapt(mat).createBlockState());
             }
         }
     }

@@ -155,6 +155,23 @@ public final class CustomTool {
         return level == null ? 0 : level;
     }
 
+    /**
+     * Determines the tool level based on its material. The lowest tier
+     * (wooden) is level 1 while the highest (netherite) is level 6. If the
+     * item does not match any known pickaxe material the level is 0.
+     */
+    public static int getToolLevel(ItemStack item) {
+        Material type = item.getType();
+        int level = 1;
+        for (ToolMaterial material : ToolMaterial.values()) {
+            if (material.getMaterial() == type) {
+                return level;
+            }
+            level++;
+        }
+        return 0;
+    }
+
     private static void insertLoreLine(ItemMeta meta, String line) {
         List<String> lore = meta.getLore();
         if (lore == null) {

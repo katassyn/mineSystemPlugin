@@ -17,6 +17,7 @@ public final class MineSystemPlugin extends JavaPlugin {
     private SphereManager sphereManager;
     private PickaxeManager pickaxeManager;
 
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
@@ -38,6 +39,7 @@ public final class MineSystemPlugin extends JavaPlugin {
         } catch (SQLException e) {
             getLogger().severe("Failed to connect to MySQL: " + e.getMessage());
             getServer().getPluginManager().disablePlugin(this);
+
         }
     }
 
@@ -76,5 +78,17 @@ public final class MineSystemPlugin extends JavaPlugin {
 
     public PickaxeManager getPickaxeManager() {
         return pickaxeManager;
+    }
+
+    public StaminaManager getStaminaManager() {
+        return staminaManager;
+    }
+
+    public SphereManager getSphereManager() {
+        return sphereManager;
+    }
+
+    public MobSpawner getMobSpawner() {
+        return mobSpawner;
     }
 }

@@ -8,6 +8,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
+import net.milkbowl.vault.economy.Economy;
+import org.bukkit.plugin.RegisteredServiceProvider;
 
 import org.maks.mineSystemPlugin.command.LootCommand;
 import org.maks.mineSystemPlugin.command.MineCommand;
@@ -49,6 +51,7 @@ public final class MineSystemPlugin extends JavaPlugin {
     private LootRepository lootRepository;
     private SpecialLootManager specialLootManager;
     private SpecialLootRepository specialLootRepository;
+    private Economy economy;
 
     private static final Map<String, Integer> ORE_DURABILITY = Map.ofEntries(
             Map.entry("Hematite", 40),
@@ -91,6 +94,7 @@ public final class MineSystemPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        setupEconomy();
         database = new DatabaseManager(this);
         questRepository = new QuestRepository(database);
 
@@ -120,6 +124,18 @@ public final class MineSystemPlugin extends JavaPlugin {
         registerListener(new BlockBreakListener(this));
         registerListener(new OreBreakListener(this));
         registerListener(new ToolListener(this));
+    }
+
+    private void setupEconomy() {
+        if (!getServer().getPluginManager().isPluginEnabled("Vault")) {
+            getLogger().severe("Vault plugin not found, disabling plugin");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        if (rsp != null) {
+            economy = rsp.getProvider();
+        }
     }
 
     private void registerListener(Listener listener) {
@@ -164,6 +180,10 @@ public final class MineSystemPlugin extends JavaPlugin {
 
     public SpecialLootManager getSpecialLootManager() {
         return specialLootManager;
+    }
+
+    public Economy getEconomy() {
+        return economy;
     }
 
     public boolean isCustomOre(Material material) {

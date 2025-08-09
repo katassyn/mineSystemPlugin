@@ -14,6 +14,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.permissions.PermissionAttachment;
 import org.maks.mineSystemPlugin.sphere.SphereManager;
 
 /**
@@ -45,6 +46,22 @@ public class MineMenu implements InventoryHolder, Listener {
             premium.setItemMeta(premiumMeta);
         }
         inventory.setItem(5, premium);
+
+        ItemStack shop = new ItemStack(Material.EMERALD);
+        ItemMeta shopMeta = shop.getItemMeta();
+        if (shopMeta != null) {
+            shopMeta.setDisplayName(ChatColor.GREEN + "Mine Shop");
+            shop.setItemMeta(shopMeta);
+        }
+        inventory.setItem(1, shop);
+
+        ItemStack sell = new ItemStack(Material.CHEST);
+        ItemMeta sellMeta = sell.getItemMeta();
+        if (sellMeta != null) {
+            sellMeta.setDisplayName(ChatColor.GOLD + "Sell Ores");
+            sell.setItemMeta(sellMeta);
+        }
+        inventory.setItem(7, sell);
 
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
@@ -79,6 +96,25 @@ public class MineMenu implements InventoryHolder, Listener {
                 }
             } else {
                 player.sendMessage(ChatColor.RED + "You need a Premium Mine Voucher to enter!");
+            }
+        } else if (name.equalsIgnoreCase("Sell Ores")) {
+            player.closeInventory();
+            if (plugin instanceof org.maks.mineSystemPlugin.MineSystemPlugin main) {
+                if (main.getEconomy() != null) {
+                    SellMenu menu = new SellMenu(plugin, main.getEconomy());
+                    player.openInventory(menu.getInventory());
+                } else {
+                    player.sendMessage(ChatColor.RED + "Economy unavailable");
+                }
+            }
+        } else if (name.equalsIgnoreCase("Mine Shop")) {
+            player.closeInventory();
+            if (!player.hasPermission("mycraftingplugin.use")) {
+                PermissionAttachment attachment = player.addAttachment(plugin, "mycraftingplugin.use", true);
+                player.performCommand("mine_shop");
+                attachment.remove();
+            } else {
+                player.performCommand("mine_shop");
             }
         }
     }

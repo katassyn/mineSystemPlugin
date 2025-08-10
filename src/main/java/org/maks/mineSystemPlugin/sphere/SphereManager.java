@@ -314,6 +314,12 @@ public class SphereManager {
 
     private Location findSafeLocation(Region region, World world) {
         for (BlockVector3 vec : region) {
+            Block block = world.getBlockAt(vec.getX(), vec.getY(), vec.getZ());
+            if (block.getType() == Material.GOLD_BLOCK && block.getRelative(0, 1, 0).getType() == Material.AIR) {
+                return block.getLocation().add(0.5, 1, 0.5);
+            }
+        }
+        for (BlockVector3 vec : region) {
             Location loc = new Location(world, vec.getX(), vec.getY(), vec.getZ());
             if (world.getBlockAt(loc).getType() == Material.AIR && world.getBlockAt(loc.clone().add(0, 1, 0)).getType() == Material.AIR) {
                 return loc.add(0.5, 0, 0.5);

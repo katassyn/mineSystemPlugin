@@ -16,6 +16,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.maks.mineSystemPlugin.item.CustomItems;
 
 /**
  * GUI allowing players to sell mined ores for Vault currency.
@@ -112,7 +113,13 @@ public class SellMenu implements InventoryHolder, Listener {
             if (!isOre(mat)) {
                 continue;
             }
-            double price = plugin.getConfig().getDouble("sell-prices." + base + "." + mat.name(), 0.0);
+            String oreId = CustomItems.getId(item);
+            double price;
+            if (oreId != null) {
+                price = plugin.getConfig().getDouble("sell-prices." + base + "." + oreId, 0.0);
+            } else {
+                price = plugin.getConfig().getDouble("sell-prices." + base + "." + mat.name(), 0.0);
+            }
             total += price * item.getAmount();
             inventory.setItem(i, null);
         }

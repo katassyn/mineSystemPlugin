@@ -10,7 +10,12 @@ import java.util.Random;
 public enum SphereType {
     ORE("Ore", 45),
     TREASURE("Treasure", 11),
-    DEFAULT("Default", 44);
+    VEGETATION("Vegetation", 15),
+    MOB("Mob", 15),
+    BOSS("Boss", 3),
+    SPECIAL_EVENT("SpecialEvent", 5),
+    PUZZLE("Puzzle", 7),
+    CRYSTAL_DUST("CrystalDust", 5);
 
     private static final Random RANDOM = new Random();
 

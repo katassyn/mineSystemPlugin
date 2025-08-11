@@ -139,6 +139,18 @@ public class SphereManager {
      * @return true if the sphere was created
      */
     public boolean createSphere(Player player, boolean premium) {
+        return createSphere(player, premium, "unknown");
+    }
+
+    /**
+     * Spawns a new mining sphere for the given player.
+     *
+     * @param player  owner of the sphere
+     * @param premium whether to use premium ore distributions
+     * @param source  debug description of what triggered the spawn
+     * @return true if the sphere was created
+     */
+    public boolean createSphere(Player player, boolean premium, String source) {
         if (active.size() >= maxSpheres) {
             player.sendMessage("Sphere limit reached");
             return false;
@@ -204,12 +216,18 @@ public class SphereManager {
             Sphere sphere = new Sphere(type, region, task, origin.getWorld(), origin, holograms);
             active.put(player.getUniqueId(), sphere);
             sphereRepository.save(new SphereData(player.getUniqueId(), type.name(), System.currentTimeMillis()));
+            plugin.getLogger().info(String.format("Spawned %s sphere for %s via %s at %d %d %d",
+                    type.name(), player.getName(), source,
+                    origin.getBlockX(), origin.getBlockY(), origin.getBlockZ()));
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 Location tp = findSafeLocation(region, origin.getWorld());
+                String coords = String.format("%d %d %d", origin.getBlockX(), origin.getBlockY(), origin.getBlockZ());
                 if (tp != null) {
                     player.teleport(tp);
+                    player.sendMessage(ChatColor.YELLOW + "Teleported to sphere at " + coords);
                 } else {
                     player.teleport(origin.clone().add(0.5, 1, 0.5));
+                    player.sendMessage(ChatColor.YELLOW + "Sphere spawned at " + coords);
                 }
             }, 40L);
             Bukkit.getScheduler().runTaskLater(plugin,
@@ -398,6 +416,8 @@ public class SphereManager {
         if (sphere != null) {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null) {
+                player.sendTitle(ChatColor.RED + "Time's up!", "", 10, 70, 20);
+                player.sendMessage(ChatColor.RED + "Sphere expired. Returning to spawn.");
                 player.teleport(player.getWorld().getSpawnLocation());
                 Bukkit.getPluginManager().callEvent(
                         new SphereCompleteEvent(player, sphere.getType().name(), Map.of())

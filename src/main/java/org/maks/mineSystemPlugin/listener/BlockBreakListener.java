@@ -57,15 +57,6 @@ public class BlockBreakListener implements Listener {
 
         event.setCancelled(true);
 
-        // reduce durability on every hit
-        boolean broken = CustomTool.damage(tool, plugin);
-        if (broken) {
-            player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
-        } else {
-            player.getInventory().setItemInMainHand(tool);
-        }
-        player.updateInventory();
-
         if (remaining > 0) {
             return;
         }

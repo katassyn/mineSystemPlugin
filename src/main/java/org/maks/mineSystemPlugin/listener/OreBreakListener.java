@@ -45,13 +45,6 @@ public class OreBreakListener implements Listener {
 
         Player player = event.getPlayer();
         ItemStack tool = player.getInventory().getItemInMainHand();
-        boolean broken = CustomTool.damage(tool, plugin);
-        if (broken) {
-            player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
-        } else {
-            player.getInventory().setItemInMainHand(tool);
-        }
-        player.updateInventory();
 
         Collection<ItemStack> drops = block.getDrops(tool);
         event.setDropItems(false);

@@ -18,6 +18,7 @@ import java.util.Map;
 public final class CustomItems {
 
     private static final Map<String, ItemStack> ITEMS = new HashMap<>();
+    private static final Map<String, String> NAME_TO_ID = new HashMap<>();
 
     static {
         // Black Ore (Coal-based)
@@ -149,6 +150,9 @@ public final class CustomItems {
         }
         stack.setItemMeta(meta);
         ITEMS.put(id, stack);
+        if (meta.hasDisplayName()) {
+            NAME_TO_ID.put(meta.getDisplayName(), id);
+        }
     }
 
     /**
@@ -158,6 +162,20 @@ public final class CustomItems {
     public static ItemStack get(String id) {
         ItemStack stack = ITEMS.get(id);
         return stack != null ? stack.clone() : null;
+    }
+
+    /**
+     * Attempts to resolve the registered id for a given item instance.
+     */
+    public static String getId(ItemStack stack) {
+        if (stack == null) {
+            return null;
+        }
+        ItemMeta meta = stack.getItemMeta();
+        if (meta != null && meta.hasDisplayName()) {
+            return NAME_TO_ID.get(meta.getDisplayName());
+        }
+        return null;
     }
 
     private CustomItems() {

@@ -11,12 +11,12 @@ commands:
   mine:
     description: Open the mine selection menu
     usage: /mine
-  repair:
+  mine_repair:
     description: Repair the item in your main hand using Crystals.
-    usage: /repair
-  crystalenchant:
+    usage: /mine_repair
+  mine_enchant:
     description: Enchants a pickaxe using crystals
-    usage: /crystalenchant
+    usage: /mine_enchant
 
   spawnsphere:
     description: Spawns a mining sphere for testing

@@ -20,11 +20,12 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 
+import org.maks.mineSystemPlugin.CrystalCurrency;
+
 import org.maks.mineSystemPlugin.tool.CustomTool;
 
 public class CrystalEnchantCommand implements CommandExecutor, Listener {
 
-    private static final Material CURRENCY = Material.PRISMARINE_CRYSTALS;
     private final Random random = new Random();
     private final Plugin plugin;
 
@@ -149,21 +150,7 @@ public class CrystalEnchantCommand implements CommandExecutor, Listener {
     }
 
     private boolean removeCrystals(Player player, int amount) {
-        int remaining = amount;
-        ItemStack[] contents = player.getInventory().getContents();
-        for (int i = 0; i < contents.length; i++) {
-            ItemStack stack = contents[i];
-            if (stack == null || stack.getType() != CURRENCY) continue;
-            int take = Math.min(remaining, stack.getAmount());
-            stack.setAmount(stack.getAmount() - take);
-            remaining -= take;
-            if (stack.getAmount() == 0) {
-                contents[i] = null;
-            }
-            if (remaining <= 0) break;
-        }
-        player.getInventory().setContents(contents);
-        return remaining <= 0;
+        return CrystalCurrency.removeCrystals(player, amount);
     }
 
     private List<EnchantType> chooseEnchantments() {

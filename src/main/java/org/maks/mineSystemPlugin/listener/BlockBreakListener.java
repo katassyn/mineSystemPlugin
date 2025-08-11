@@ -41,6 +41,11 @@ public class BlockBreakListener implements Listener {
             return;
         }
 
+        if (!plugin.getSphereManager().isInsideSphere(block.getLocation())) {
+            event.setCancelled(true);
+            return;
+        }
+
         Player player = event.getPlayer();
         ItemStack tool = player.getInventory().getItemInMainHand();
         Material oreType = block.getType();

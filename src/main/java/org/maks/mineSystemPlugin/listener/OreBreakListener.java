@@ -38,6 +38,11 @@ public class OreBreakListener implements Listener {
             return;
         }
 
+        if (!plugin.getSphereManager().isInsideSphere(block.getLocation())) {
+            event.setCancelled(true);
+            return;
+        }
+
         Player player = event.getPlayer();
         ItemStack tool = player.getInventory().getItemInMainHand();
         Collection<ItemStack> drops = block.getDrops(tool);

@@ -22,6 +22,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.ChatColor;
+import org.maks.mineSystemPlugin.CrystalCurrency;
 
 /**
  * Command that repairs the item held in the player's main hand. The cost is
@@ -139,33 +140,11 @@ public class RepairCommand implements CommandExecutor, Listener {
     }
 
     private boolean hasCrystals(Player player, int amount) {
-        int total = 0;
-        for (ItemStack stack : player.getInventory().getContents()) {
-            if (stack != null && stack.getType() == Material.PRISMARINE_CRYSTALS) {
-                total += stack.getAmount();
-                if (total >= amount) {
-                    return true;
-                }
-            }
-        }
-        return total >= amount;
+        return CrystalCurrency.hasCrystals(player, amount);
     }
 
     private void removeCrystals(Player player, int amount) {
-        int remaining = amount;
-        ItemStack[] contents = player.getInventory().getContents();
-        for (int i = 0; i < contents.length && remaining > 0; i++) {
-            ItemStack stack = contents[i];
-            if (stack != null && stack.getType() == Material.PRISMARINE_CRYSTALS) {
-                int toRemove = Math.min(stack.getAmount(), remaining);
-                stack.setAmount(stack.getAmount() - toRemove);
-                remaining -= toRemove;
-                if (stack.getAmount() <= 0) {
-                    contents[i] = null;
-                }
-            }
-        }
-        player.getInventory().setContents(contents);
+        CrystalCurrency.removeCrystals(player, amount);
     }
 
     private void repairItem(ItemStack item) {

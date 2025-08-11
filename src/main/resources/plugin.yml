@@ -14,12 +14,13 @@ commands:
     permission: minesystemplugin.mine
   repair:
     description: Repair the item in your main hand using Crystals.
-    usage: /repair
+    usage: /mine_repair
     permission: minesystemplugin.mine
   crystalenchant:
     description: Enchants a pickaxe using crystals
-    usage: /crystalenchant
+    usage: /mine_enchant
     permission: minesystemplugin.mine
+
   spawnsphere:
     description: Spawns a mining sphere for testing
     usage: /spawnsphere

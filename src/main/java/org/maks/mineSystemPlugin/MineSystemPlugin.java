@@ -111,10 +111,10 @@ public final class MineSystemPlugin extends JavaPlugin {
         getCommand("specialloot").setExecutor(new SpecialLootCommand(this, specialLootRepository, specialLootManager));
 
         RepairCommand repairCommand = new RepairCommand(this);
-        getCommand("repair").setExecutor(repairCommand);
+        getCommand("mine_repair").setExecutor(repairCommand);
         registerListener(repairCommand);
         CrystalEnchantCommand ceCommand = new CrystalEnchantCommand(this);
-        getCommand("crystalenchant").setExecutor(ceCommand);
+        getCommand("mine_enchant").setExecutor(ceCommand);
         registerListener(ceCommand);
         getCommand("mine").setExecutor(new MineCommand(this, sphereManager));
         getCommand("spawnsphere").setExecutor(this);

@@ -243,6 +243,7 @@ public class SphereManager {
         }
     }
 
+
     private Map<BlockVector3, OreVariant> replacePlaceholders(Clipboard clipboard, boolean premium) {
         Map<BlockVector3, OreVariant> variants = new HashMap<>();
         Region region = clipboard.getRegion();

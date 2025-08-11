@@ -27,31 +27,31 @@ public class ToolListener implements Listener {
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
         ItemStack tool = player.getInventory().getItemInMainHand();
-        if (tool.getType() == Material.AIR) {
+        if (tool.getType() == Material.AIR || !tool.hasItemMeta()) {
             return;
         }
 
-        if (!tool.hasItemMeta()) return;
+        if (!event.isCancelled()) {
+            // check canDestroy list
+            if (!canDestroy(tool, event.getBlock())) {
+                event.setCancelled(true);
+                return;
+            }
 
-        // check canDestroy list
-        if (!canDestroy(tool, event.getBlock())) {
-            event.setCancelled(true);
-            return;
-        }
-
-        // duplicate drops
-        int dupLevel = CustomTool.getDuplicateLevel(tool, plugin);
-        if (dupLevel > 0) {
-            double chance = switch (dupLevel) {
-                case 1 -> 0.03;
-                case 2 -> 0.04;
-                case 3 -> 0.05;
-                default -> 0.0;
-            };
-            if (Math.random() < chance) {
-                Collection<ItemStack> drops = event.getBlock().getDrops(tool, player);
-                for (ItemStack drop : drops) {
-                    event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), drop);
+            // duplicate drops
+            int dupLevel = CustomTool.getDuplicateLevel(tool, plugin);
+            if (dupLevel > 0) {
+                double chance = switch (dupLevel) {
+                    case 1 -> 0.03;
+                    case 2 -> 0.04;
+                    case 3 -> 0.05;
+                    default -> 0.0;
+                };
+                if (Math.random() < chance) {
+                    Collection<ItemStack> drops = event.getBlock().getDrops(tool, player);
+                    for (ItemStack drop : drops) {
+                        event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), drop);
+                    }
                 }
             }
         }

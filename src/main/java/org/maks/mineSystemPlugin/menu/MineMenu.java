@@ -85,13 +85,13 @@ public class MineMenu implements InventoryHolder, Listener {
         String name = ChatColor.stripColor(item.getItemMeta().getDisplayName());
         if (name.equalsIgnoreCase("Regular Mine")) {
             player.closeInventory();
-            if (sphereManager.createSphere(player, false)) {
+            if (sphereManager.createSphere(player, false, "MineMenu")) {
                 player.sendMessage(ChatColor.GREEN + "Sphere created!");
             }
         } else if (name.equalsIgnoreCase("Premium Mine")) {
             player.closeInventory();
             if (consumeVoucher(player)) {
-                if (sphereManager.createSphere(player, true)) {
+                if (sphereManager.createSphere(player, true, "MineMenu")) {
                     player.sendMessage(ChatColor.GREEN + "Premium sphere created!");
                 }
             } else {

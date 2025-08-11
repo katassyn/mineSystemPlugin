@@ -189,7 +189,7 @@ public final class MineSystemPlugin extends JavaPlugin {
                 return true;
             }
             if (sphereManager != null) {
-                sphereManager.createSphere(player, false);
+                sphereManager.createSphere(player, false, "/spawnsphere");
             }
             return true;
         }

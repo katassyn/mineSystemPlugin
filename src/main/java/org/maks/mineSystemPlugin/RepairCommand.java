@@ -195,6 +195,8 @@ public class RepairCommand implements CommandExecutor, Listener {
             }
             removeCrystals(player, menu.cost);
             repairItem(menu.tool);
+            player.getInventory().setItemInMainHand(menu.tool);
+            player.updateInventory(); // opcjonalnie, aby odświeżyć ekwipunek
             player.sendMessage(ChatColor.GREEN + "Item repaired for " + menu.cost + " Crystals.");
             player.closeInventory();
         } else if (event.getSlot() == 22) {

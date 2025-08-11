@@ -64,6 +64,7 @@ public class BlockBreakListener implements Listener {
         } else {
             player.getInventory().setItemInMainHand(tool);
         }
+        player.updateInventory();
 
         if (remaining > 0) {
             return;

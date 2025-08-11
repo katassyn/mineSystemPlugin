@@ -62,6 +62,7 @@ public class ToolListener implements Listener {
         } else {
             player.getInventory().setItemInMainHand(tool);
         }
+        player.updateInventory();
     }
 
     private boolean canDestroy(ItemStack tool, Block block) {

@@ -3,6 +3,7 @@ package org.maks.mineSystemPlugin;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -10,6 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.maks.mineSystemPlugin.item.CustomItems;
+import org.maks.mineSystemPlugin.tool.CustomTool;
 
 import java.util.*;
 
@@ -47,6 +49,15 @@ public class SpecialBlockListener implements Listener {
         showHologram(loc, display, remaining, requiredHits);
 
         event.setCancelled(true);
+
+        Player player = event.getPlayer();
+        ItemStack tool = player.getInventory().getItemInMainHand();
+        boolean broken = CustomTool.damage(tool, plugin);
+        if (broken) {
+            player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
+        } else {
+            player.getInventory().setItemInMainHand(tool);
+        }
 
         if (hits < requiredHits) {
             if (hits % interval == 0) {

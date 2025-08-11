@@ -20,7 +20,6 @@ commands:
     description: Enchants a pickaxe using crystals
     usage: /mine_enchant
     permission: minesystemplugin.mine
-
   spawnsphere:
     description: Spawns a mining sphere for testing
     usage: /spawnsphere

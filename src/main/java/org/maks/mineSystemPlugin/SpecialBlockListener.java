@@ -10,7 +10,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.maks.mineSystemPlugin.item.CustomItems;
-import org.maks.mineSystemPlugin.tool.CustomTool;
 
 import java.util.*;
 

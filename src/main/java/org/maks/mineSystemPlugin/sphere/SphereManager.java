@@ -191,24 +191,25 @@ public class SphereManager {
             Map<BlockVector3, OreVariant> variants = replacePlaceholders(clipboard, premium);
             BlockVector3 goldVec = findGoldBlock(clipboard);
 
-            try (EditSession editSession = WorldEdit.getInstance()
-                    .newEditSessionBuilder()
-                    .world(BukkitAdapter.adapt(origin.getWorld()))
-                    .build()) {
-                Operation operation = new ClipboardHolder(clipboard)
-
-                        .createPaste(editSession)
-                        .to(BlockVector3.at(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ()))
-                        .ignoreAirBlocks(false)
-                        .build();
-                Operations.complete(operation);
-            }
-
             Region clipRegion = clipboard.getRegion();
             BlockVector3 offset = BlockVector3.at(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ());
             Region region = new CuboidRegion(
                     clipRegion.getMinimumPoint().add(offset),
                     clipRegion.getMaximumPoint().add(offset));
+
+            loadRegionChunks(origin.getWorld(), region);
+
+            try (EditSession editSession = WorldEdit.getInstance()
+                    .newEditSessionBuilder()
+                    .world(BukkitAdapter.adapt(origin.getWorld()))
+                    .build()) {
+                Operation operation = new ClipboardHolder(clipboard)
+                        .createPaste(editSession)
+                        .to(offset)
+                        .ignoreAirBlocks(false)
+                        .build();
+                Operations.complete(operation);
+            }
 
             List<ArmorStand> holograms = spawnHolograms(origin, variants);
 
@@ -254,6 +255,7 @@ public class SphereManager {
                 player.teleport(teleport);
                 String coords = String.format("%d %d %d", teleport.getBlockX(), teleport.getBlockY() - 1, teleport.getBlockZ());
                 player.sendMessage(ChatColor.YELLOW + "Teleported to sphere at " + coords);
+
             }, 40L);
             Bukkit.getScheduler().runTaskLater(plugin,
                     () -> spawnConfiguredMobs(schematic.getName(), region, origin.getWorld()), 20L);
@@ -272,6 +274,19 @@ public class SphereManager {
         int y = world.getMaxHeight() / 2;
         return new Location(world, x, y, z);
     }
+
+    private void loadRegionChunks(World world, Region region) {
+        int minX = region.getMinimumPoint().getBlockX() >> 4;
+        int minZ = region.getMinimumPoint().getBlockZ() >> 4;
+        int maxX = region.getMaximumPoint().getBlockX() >> 4;
+        int maxZ = region.getMaximumPoint().getBlockZ() >> 4;
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                world.getChunkAt(x, z);
+            }
+        }
+    }
+
 
     private Map<BlockVector3, OreVariant> replacePlaceholders(Clipboard clipboard, boolean premium) {
         Map<BlockVector3, OreVariant> variants = new HashMap<>();
@@ -451,6 +466,7 @@ public class SphereManager {
                 } else {
                     player.teleport(player.getWorld().getSpawnLocation());
                 }
+
                 Bukkit.getPluginManager().callEvent(
                         new SphereCompleteEvent(player, sphere.getType().name(), Map.of())
                 );

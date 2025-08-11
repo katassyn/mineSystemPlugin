@@ -12,11 +12,11 @@ commands:
     description: Open the mine selection menu
     usage: /mine
     permission: minesystemplugin.mine
-  repair:
+  mine_repair:
     description: Repair the item in your main hand using Crystals.
     usage: /mine_repair
     permission: minesystemplugin.mine
-  crystalenchant:
+  mine_enchant:
     description: Enchants a pickaxe using crystals
     usage: /mine_enchant
     permission: minesystemplugin.mine

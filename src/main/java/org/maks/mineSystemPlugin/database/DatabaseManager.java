@@ -37,7 +37,12 @@ public class DatabaseManager {
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS quests (uuid VARCHAR(36) PRIMARY KEY, progress INT)");
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS spheres (uuid VARCHAR(36) PRIMARY KEY, type VARCHAR(32), start_time BIGINT)");
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS loot_items (material VARCHAR(64) PRIMARY KEY, chance INT)");
-            statement.executeUpdate("CREATE TABLE IF NOT EXISTS special_loot (schematic VARCHAR(64), material VARCHAR(64), amount INT, PRIMARY KEY(schematic, material))");
+            statement.executeUpdate("CREATE TABLE IF NOT EXISTS special_loot (schematic VARCHAR(64), material VARCHAR(64), amount INT, chance INT, PRIMARY KEY(schematic, material))");
+            try {
+                statement.executeUpdate("ALTER TABLE special_loot ADD COLUMN chance INT DEFAULT 0");
+            } catch (SQLException ignore) {
+                // column already exists
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }

@@ -35,7 +35,7 @@ public class SpecialBlockListener implements Listener {
         switch (type) {
             case MOSS_BLOCK -> { requiredHits = 75; interval = 25; display = "Moss Block"; }
             case BONE_BLOCK -> { requiredHits = 100; interval = 25; display = "Bone Block"; }
-            case AMETHYST_BLOCK -> { requiredHits = 25; interval = 5; display = "Amethyst Block"; }
+            case AMETHYST_BLOCK -> { requiredHits = 25; interval = 5; display = "Crystals"; }
             default -> { return; }
         }
 

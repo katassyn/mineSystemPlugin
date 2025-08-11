@@ -57,6 +57,14 @@ public class BlockBreakListener implements Listener {
 
         event.setCancelled(true);
 
+        // reduce durability on every hit
+        boolean broken = CustomTool.damage(tool, plugin);
+        if (broken) {
+            player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
+        } else {
+            player.getInventory().setItemInMainHand(tool);
+        }
+
         if (remaining > 0) {
             return;
         }
@@ -96,13 +104,6 @@ public class BlockBreakListener implements Listener {
                     block.getWorld().dropItemNaturally(block.getLocation(), reward.clone());
                 }
             }
-        }
-
-        boolean broken = CustomTool.damage(tool, plugin);
-        if (broken) {
-            player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
-        } else {
-            player.getInventory().setItemInMainHand(tool);
         }
     }
 }

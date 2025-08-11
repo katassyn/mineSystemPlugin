@@ -60,7 +60,7 @@ public class RepairCommand implements CommandExecutor, Listener {
     private void openMenu(Player player, ItemStack tool, int cost) {
         Inventory inv = Bukkit.createInventory(new RepairMenu(tool, cost), 27, ChatColor.DARK_GREEN + "Repair Pickaxe");
 
-        ItemStack filler = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
+        ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         ItemMeta fMeta = filler.getItemMeta();
         fMeta.setDisplayName(" ");
         filler.setItemMeta(fMeta);

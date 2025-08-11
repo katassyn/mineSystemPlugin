@@ -10,6 +10,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.plugin.RegisteredServiceProvider;
+import java.io.File;
 
 import org.maks.mineSystemPlugin.command.LootCommand;
 import org.maks.mineSystemPlugin.command.MineCommand;
@@ -22,6 +23,7 @@ import org.maks.mineSystemPlugin.repository.LootRepository;
 import org.maks.mineSystemPlugin.repository.SpecialLootRepository;
 import org.maks.mineSystemPlugin.sphere.SphereManager;
 import org.maks.mineSystemPlugin.sphere.SphereListener;
+import org.maks.mineSystemPlugin.sphere.SphereType;
 import org.maks.mineSystemPlugin.listener.BlockBreakListener;
 import org.maks.mineSystemPlugin.listener.OreBreakListener;
 import org.maks.mineSystemPlugin.tool.ToolListener;
@@ -94,6 +96,7 @@ public final class MineSystemPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        createSchematicFolders();
         setupEconomy();
         database = new DatabaseManager(this);
         questRepository = new QuestRepository(database);
@@ -111,10 +114,10 @@ public final class MineSystemPlugin extends JavaPlugin {
         getCommand("specialloot").setExecutor(new SpecialLootCommand(this, specialLootRepository, specialLootManager));
 
         RepairCommand repairCommand = new RepairCommand(this);
-        getCommand("repair").setExecutor(repairCommand);
+        getCommand("mine_repair").setExecutor(repairCommand);
         registerListener(repairCommand);
         CrystalEnchantCommand ceCommand = new CrystalEnchantCommand(this);
-        getCommand("crystalenchant").setExecutor(ceCommand);
+        getCommand("mine_enchant").setExecutor(ceCommand);
         registerListener(ceCommand);
         getCommand("mine").setExecutor(new MineCommand(this, sphereManager));
         getCommand("spawnsphere").setExecutor(this);
@@ -124,6 +127,20 @@ public final class MineSystemPlugin extends JavaPlugin {
         registerListener(new BlockBreakListener(this));
         registerListener(new OreBreakListener(this));
         registerListener(new ToolListener(this));
+    }
+
+    /**
+     * Ensures that the schematic folder structure exists so that
+     * administrators can easily drop sphere schematics in the proper place.
+     */
+    private void createSchematicFolders() {
+        File base = new File(getDataFolder(), "schematics");
+        for (SphereType type : SphereType.values()) {
+            File folder = new File(base, type.getFolderName());
+            if (!folder.exists()) {
+                folder.mkdirs();
+            }
+        }
     }
 
     private void setupEconomy() {

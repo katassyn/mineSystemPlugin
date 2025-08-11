@@ -11,16 +11,21 @@ commands:
   mine:
     description: Open the mine selection menu
     usage: /mine
-  repair:
+    permission: minesystemplugin.mine
+  mine_repair:
     description: Repair the item in your main hand using Crystals.
-    usage: /repair
-  crystalenchant:
+    usage: /mine_repair
+    permission: minesystemplugin.mine
+  mine_enchant:
     description: Enchants a pickaxe using crystals
-    usage: /crystalenchant
+    usage: /mine_enchant
+    permission: minesystemplugin.mine
 
   spawnsphere:
     description: Spawns a mining sphere for testing
     usage: /spawnsphere
+    permission: minesystemplugin.mine
   specialloot:
     description: Edit loot for special schematics
     usage: /specialloot <schematic>
+    permission: minesystemplugin.mine

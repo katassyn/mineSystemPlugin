@@ -13,5 +13,24 @@ database:
 
 sell-prices:
   world:
-    COAL_ORE: 1.0
-    IRON_ORE: 2.0
+    Hematite: 40.0
+    BlackSpinel: 70.0
+    BlackDiamond: 120.0
+    Magnetite: 50.0
+    Silver: 90.0
+    Osmium: 140.0
+    Azurite: 60.0
+    Tanzanite: 100.0
+    BlueSapphire: 150.0
+    Carnelian: 65.0
+    RedSpinel: 115.0
+    PigeonBloodRuby: 175.0
+    Pyrite: 75.0
+    YellowTopaz: 125.0
+    YellowSapphire: 180.0
+    Malachite: 90.0
+    Peridot: 130.0
+    TropicheEmerald: 200.0
+    Danburite: 100.0
+    Goshenite: 175.0
+    Cerussite: 300.0

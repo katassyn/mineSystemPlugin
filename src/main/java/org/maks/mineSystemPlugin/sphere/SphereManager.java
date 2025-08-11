@@ -241,7 +241,7 @@ public class SphereManager {
                     origin.getBlockX() + vec.getX(),
                     origin.getBlockY() + vec.getY(),
                     origin.getBlockZ() + vec.getZ());
-            ArmorStand stand = world.spawn(blockLoc.clone().add(0.5, 0, 0.5), ArmorStand.class, as -> {
+            ArmorStand stand = world.spawn(blockLoc.clone().add(0.5, 1.2, 0.5), ArmorStand.class, as -> {
                 as.setInvisible(true);
                 as.setMarker(true);
                 as.setGravity(false);
@@ -427,5 +427,15 @@ public class SphereManager {
     public void removeAll() {
         Set<UUID> ids = new HashSet<>(active.keySet());
         ids.forEach(this::removeSphere);
+    }
+
+    public boolean isInsideSphere(Location loc) {
+        BlockVector3 vec = BlockVector3.at(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        for (Sphere sphere : active.values()) {
+            if (sphere.getRegion().contains(vec)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

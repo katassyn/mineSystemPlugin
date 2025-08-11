@@ -41,6 +41,11 @@ public class BlockBreakListener implements Listener {
             return;
         }
 
+        if (!plugin.getSphereManager().isInsideSphere(block.getLocation())) {
+            event.setCancelled(true);
+            return;
+        }
+
         Player player = event.getPlayer();
         ItemStack tool = player.getInventory().getItemInMainHand();
         Material oreType = block.getType();
@@ -51,6 +56,14 @@ public class BlockBreakListener implements Listener {
         plugin.getSphereManager().updateHologram(block.getLocation(), remaining);
 
         event.setCancelled(true);
+
+        // reduce durability on every hit
+        boolean broken = CustomTool.damage(tool, plugin);
+        if (broken) {
+            player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
+        } else {
+            player.getInventory().setItemInMainHand(tool);
+        }
 
         if (remaining > 0) {
             return;
@@ -91,13 +104,6 @@ public class BlockBreakListener implements Listener {
                     block.getWorld().dropItemNaturally(block.getLocation(), reward.clone());
                 }
             }
-        }
-
-        boolean broken = CustomTool.damage(tool, plugin);
-        if (broken) {
-            player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
-        } else {
-            player.getInventory().setItemInMainHand(tool);
         }
     }
 }

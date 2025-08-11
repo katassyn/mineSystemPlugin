@@ -35,7 +35,7 @@ public class SpecialBlockListener implements Listener {
         switch (type) {
             case MOSS_BLOCK -> { requiredHits = 75; interval = 25; display = "Moss Block"; }
             case BONE_BLOCK -> { requiredHits = 100; interval = 25; display = "Bone Block"; }
-            case AMETHYST_BLOCK -> { requiredHits = 25; interval = 5; display = "Amethyst Block"; }
+            case AMETHYST_BLOCK -> { requiredHits = 25; interval = 5; display = "Crystals"; }
             default -> { return; }
         }
 
@@ -82,7 +82,7 @@ public class SpecialBlockListener implements Listener {
 
     private void showHologram(Location loc, String name, int remaining, int max) {
         ArmorStand stand = holograms.computeIfAbsent(loc, l ->
-                loc.getWorld().spawn(loc.clone().add(0.5, 0, 0.5), ArmorStand.class, as -> {
+                loc.getWorld().spawn(loc.clone().add(0.5, 1.2, 0.5), ArmorStand.class, as -> {
                     as.setInvisible(true);
                     as.setMarker(true);
                     as.setGravity(false);

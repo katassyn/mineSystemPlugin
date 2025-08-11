@@ -27,14 +27,17 @@ public class Sphere {
     private final World world;
     private final Location origin;
     private final List<ArmorStand> holograms;
+    private final List<BukkitTask> warningTasks;
 
-    public Sphere(SphereType type, Region region, BukkitTask expiryTask, World world, Location origin, List<ArmorStand> holograms) {
+    public Sphere(SphereType type, Region region, BukkitTask expiryTask, World world, Location origin,
+                  List<ArmorStand> holograms, List<BukkitTask> warningTasks) {
         this.type = type;
         this.region = region;
         this.expiryTask = expiryTask;
         this.world = world;
         this.origin = origin;
         this.holograms = holograms;
+        this.warningTasks = warningTasks;
     }
 
     public SphereType getType() {
@@ -54,6 +57,9 @@ public class Sphere {
      */
     public void remove() {
         expiryTask.cancel();
+        for (BukkitTask task : warningTasks) {
+            task.cancel();
+        }
         for (ArmorStand stand : holograms) {
             stand.remove();
         }

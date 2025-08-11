@@ -3,7 +3,6 @@ package org.maks.mineSystemPlugin;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -50,16 +49,6 @@ public class SpecialBlockListener implements Listener {
 
         event.setCancelled(true);
 
-        Player player = event.getPlayer();
-        ItemStack tool = player.getInventory().getItemInMainHand();
-        boolean broken = CustomTool.damage(tool, plugin);
-        if (broken) {
-            player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
-        } else {
-            player.getInventory().setItemInMainHand(tool);
-        }
-        player.updateInventory();
-
         if (hits < requiredHits) {
             if (hits % interval == 0) {
                 int amount = random.nextInt(4) + 1;
@@ -81,13 +70,37 @@ public class SpecialBlockListener implements Listener {
         removeHologram(loc);
         World world = block.getWorld();
 
+        // handle duplication enchant
+        Player player = event.getPlayer();
+        ItemStack tool = player.getInventory().getItemInMainHand();
+        int dupLevel = CustomTool.getDuplicateLevel(tool, plugin);
+        double chance = switch (dupLevel) {
+            case 1 -> 0.03;
+            case 2 -> 0.04;
+            case 3 -> 0.05;
+            default -> 0.0;
+        };
+        boolean duplicate = Math.random() < chance;
+
         if (type == Material.MOSS_BLOCK) {
-            world.dropItemNaturally(loc, createLeaf(randomTier()));
+            ItemStack leaf = createLeaf(randomTier());
+            world.dropItemNaturally(loc, leaf);
+            if (duplicate) {
+                world.dropItemNaturally(loc, leaf.clone());
+            }
         } else if (type == Material.BONE_BLOCK) {
-            world.dropItemNaturally(loc, createBone(randomTier()));
+            ItemStack bone = createBone(randomTier());
+            world.dropItemNaturally(loc, bone);
+            if (duplicate) {
+                world.dropItemNaturally(loc, bone.clone());
+            }
         } else if (type == Material.AMETHYST_BLOCK) {
-            for (ItemStack stack : createCrystals()) {
+            List<ItemStack> crystals = createCrystals();
+            for (ItemStack stack : crystals) {
                 world.dropItemNaturally(loc, stack);
+                if (duplicate) {
+                    world.dropItemNaturally(loc, stack.clone());
+                }
             }
         }
     }

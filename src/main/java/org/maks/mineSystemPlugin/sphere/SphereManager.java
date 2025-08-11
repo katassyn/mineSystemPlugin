@@ -27,6 +27,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.maks.mineSystemPlugin.events.SphereCompleteEvent;
 import org.maks.mineSystemPlugin.LootManager;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
@@ -139,6 +140,18 @@ public class SphereManager {
      * @return true if the sphere was created
      */
     public boolean createSphere(Player player, boolean premium) {
+        return createSphere(player, premium, "unknown");
+    }
+
+    /**
+     * Spawns a new mining sphere for the given player.
+     *
+     * @param player  owner of the sphere
+     * @param premium whether to use premium ore distributions
+     * @param source  debug description of what triggered the spawn
+     * @return true if the sphere was created
+     */
+    public boolean createSphere(Player player, boolean premium, String source) {
         if (active.size() >= maxSpheres) {
             player.sendMessage("Sphere limit reached");
             return false;
@@ -176,6 +189,7 @@ public class SphereManager {
         try (ClipboardReader reader = format.getReader(new FileInputStream(schematic))) {
             Clipboard clipboard = reader.read();
             Map<BlockVector3, OreVariant> variants = replacePlaceholders(clipboard, premium);
+            BlockVector3 goldVec = findGoldBlock(clipboard);
 
             try (EditSession editSession = WorldEdit.getInstance()
                     .newEditSessionBuilder()
@@ -201,16 +215,45 @@ public class SphereManager {
             populateChests(origin.getWorld(), region, type, schematic.getName());
 
             BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> removeSphere(player.getUniqueId()), LIFE_TIME_TICKS);
-            Sphere sphere = new Sphere(type, region, task, origin.getWorld(), origin, holograms);
+
+            List<BukkitTask> warnings = new ArrayList<>();
+            warnings.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                player.sendTitle(ChatColor.YELLOW + "5 minutes remaining", "", 10, 70, 20);
+                player.sendMessage(ChatColor.YELLOW + "5 minutes remaining");
+            }, LIFE_TIME_TICKS / 2));
+            warnings.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                player.sendTitle(ChatColor.YELLOW + "1 minute remaining", "", 10, 70, 20);
+                player.sendMessage(ChatColor.YELLOW + "1 minute remaining");
+            }, LIFE_TIME_TICKS - 60L * 20L));
+            warnings.add(new BukkitRunnable() {
+                int remaining = 10;
+
+                @Override
+                public void run() {
+                    if (remaining <= 0) {
+                        cancel();
+                        return;
+                    }
+                    player.sendTitle(ChatColor.RED + String.valueOf(remaining), "", 0, 20, 0);
+                    remaining--;
+                }
+            }.runTaskTimer(plugin, LIFE_TIME_TICKS - 200L, 20L));
+
+            Sphere sphere = new Sphere(type, region, task, origin.getWorld(), origin, holograms, warnings);
             active.put(player.getUniqueId(), sphere);
             sphereRepository.save(new SphereData(player.getUniqueId(), type.name(), System.currentTimeMillis()));
+            Location teleport = origin.clone();
+            if (goldVec != null) {
+                teleport.add(goldVec.getX(), goldVec.getY(), goldVec.getZ());
+            }
+            teleport.add(0.5, 1, 0.5);
+            plugin.getLogger().info(String.format("Spawned %s sphere for %s via %s at %d %d %d",
+                    type.name(), player.getName(), source,
+                    teleport.getBlockX(), teleport.getBlockY() - 1, teleport.getBlockZ()));
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                Location tp = findSafeLocation(region, origin.getWorld());
-                if (tp != null) {
-                    player.teleport(tp);
-                } else {
-                    player.teleport(origin.clone().add(0.5, 1, 0.5));
-                }
+                player.teleport(teleport);
+                String coords = String.format("%d %d %d", teleport.getBlockX(), teleport.getBlockY() - 1, teleport.getBlockZ());
+                player.sendMessage(ChatColor.YELLOW + "Teleported to sphere at " + coords);
             }, 40L);
             Bukkit.getScheduler().runTaskLater(plugin,
                     () -> spawnConfiguredMobs(schematic.getName(), region, origin.getWorld()), 20L);
@@ -244,6 +287,17 @@ public class SphereManager {
             }
         }
         return variants;
+    }
+
+    private BlockVector3 findGoldBlock(Clipboard clipboard) {
+        Region region = clipboard.getRegion();
+        for (BlockVector3 vec : region) {
+            BlockState state = clipboard.getBlock(vec);
+            if (state.getBlockType().getId().equals("minecraft:gold_block")) {
+                return vec;
+            }
+        }
+        return null;
     }
 
     private List<ArmorStand> spawnHolograms(Location origin, Map<BlockVector3, OreVariant> variants) {
@@ -327,22 +381,6 @@ public class SphereManager {
         }, 60L));
     }
 
-    private Location findSafeLocation(Region region, World world) {
-        for (BlockVector3 vec : region) {
-            Block block = world.getBlockAt(vec.getX(), vec.getY(), vec.getZ());
-            if (block.getType() == Material.GOLD_BLOCK && block.getRelative(0, 1, 0).getType() == Material.AIR) {
-                return block.getLocation().add(0.5, 1, 0.5);
-            }
-        }
-        for (BlockVector3 vec : region) {
-            Location loc = new Location(world, vec.getX(), vec.getY(), vec.getZ());
-            if (world.getBlockAt(loc).getType() == Material.AIR && world.getBlockAt(loc.clone().add(0, 1, 0)).getType() == Material.AIR) {
-                return loc.add(0.5, 0, 0.5);
-            }
-        }
-        return null;
-    }
-
     private void spawnConfiguredMobs(String schematic, Region region, World world) {
         List<Map<?, ?>> entries = ((JavaPlugin) plugin).getConfig().getMapList("mobs." + schematic);
         for (Map<?, ?> entry : entries) {
@@ -394,11 +432,25 @@ public class SphereManager {
     }
 
     public void removeSphere(UUID uuid) {
+        removeSphere(uuid, Bukkit.getPlayer(uuid));
+    }
+
+    public void removeSphere(Player player) {
+        removeSphere(player.getUniqueId(), player);
+    }
+
+    private void removeSphere(UUID uuid, Player player) {
         Sphere sphere = active.remove(uuid);
         if (sphere != null) {
-            Player player = Bukkit.getPlayer(uuid);
             if (player != null) {
-                player.teleport(player.getWorld().getSpawnLocation());
+                player.sendTitle(ChatColor.RED + "Time's up!", "", 10, 70, 20);
+                player.sendMessage(ChatColor.RED + "Sphere expired. Returning to spawn.");
+                Plugin essentials = Bukkit.getPluginManager().getPlugin("Essentials");
+                if (essentials != null && essentials.isEnabled()) {
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "spawn " + player.getName());
+                } else {
+                    player.teleport(player.getWorld().getSpawnLocation());
+                }
                 Bukkit.getPluginManager().callEvent(
                         new SphereCompleteEvent(player, sphere.getType().name(), Map.of())
                 );
@@ -428,7 +480,7 @@ public class SphereManager {
     }
 
     public void onPlayerQuit(Player player) {
-        removeSphere(player.getUniqueId());
+        removeSphere(player);
     }
 
     public void removeAll() {

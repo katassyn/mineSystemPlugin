@@ -5,6 +5,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
 import org.maks.mineSystemPlugin.repository.QuestRepository;
+import org.maks.mineSystemPlugin.repository.PlayerRepository;
+import org.maks.mineSystemPlugin.model.PlayerData;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -21,13 +23,16 @@ public class StaminaManager {
     private final Map<UUID, PlayerStamina> staminaMap = new ConcurrentHashMap<>();
     private final Duration resetAfter;
     private final QuestRepository questRepository;
+    private final PlayerRepository playerRepository;
     private static final int STAMINA_PER_QUEST = 10;
 
-    public StaminaManager(MineSystemPlugin plugin, int baseMaxStamina, Duration resetAfter, QuestRepository questRepository) {
+    public StaminaManager(MineSystemPlugin plugin, int baseMaxStamina, Duration resetAfter,
+                          QuestRepository questRepository, PlayerRepository playerRepository) {
         this.plugin = plugin;
         this.baseMaxStamina = baseMaxStamina;
         this.resetAfter = resetAfter;
         this.questRepository = questRepository;
+        this.playerRepository = playerRepository;
         startResetTask();
     }
 
@@ -42,7 +47,16 @@ public class StaminaManager {
     }
 
     private PlayerStamina getData(UUID uuid) {
-        PlayerStamina ps = staminaMap.computeIfAbsent(uuid, id -> new PlayerStamina(calculateMaxStamina(id)));
+        PlayerStamina ps = staminaMap.computeIfAbsent(uuid, id -> {
+            PlayerStamina s = new PlayerStamina(calculateMaxStamina(id));
+            playerRepository.load(id).join().ifPresent(data -> {
+                s.setStamina(data.stamina());
+                if (data.resetTimestamp() > 0) {
+                    s.setFirstUsage(Instant.ofEpochMilli(data.resetTimestamp()));
+                }
+            });
+            return s;
+        });
         int max = calculateMaxStamina(uuid);
         if (ps.getMaxStamina() != max) {
             ps.setMaxStamina(max);
@@ -66,6 +80,7 @@ public class StaminaManager {
                         if (p != null) {
                             p.sendMessage("Your stamina has been refreshed.");
                         }
+                        playerRepository.save(new PlayerData(uuid, ps.getStamina(), 0L));
                     }
                 });
             }
@@ -86,5 +101,14 @@ public class StaminaManager {
             ps.setFirstUsage(Instant.now());
         }
         ps.setStamina(Math.max(0, ps.getStamina() - amount));
+        long reset = ps.getFirstUsage() == null ? 0L : ps.getFirstUsage().toEpochMilli();
+        playerRepository.save(new PlayerData(uuid, ps.getStamina(), reset));
+    }
+
+    public void saveAll() {
+        staminaMap.forEach((uuid, ps) -> {
+            long reset = ps.getFirstUsage() == null ? 0L : ps.getFirstUsage().toEpochMilli();
+            playerRepository.save(new PlayerData(uuid, ps.getStamina(), reset));
+        });
     }
 }

@@ -58,6 +58,7 @@ public class SpecialBlockListener implements Listener {
         } else {
             player.getInventory().setItemInMainHand(tool);
         }
+        player.updateInventory();
 
         if (hits < requiredHits) {
             if (hits % interval == 0) {

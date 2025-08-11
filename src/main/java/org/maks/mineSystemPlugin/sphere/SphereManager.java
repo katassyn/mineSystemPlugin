@@ -33,6 +33,8 @@ import org.maks.mineSystemPlugin.MineSystemPlugin;
 import org.maks.mineSystemPlugin.SpecialLootEntry;
 import org.maks.mineSystemPlugin.SpecialLootManager;
 import org.maks.mineSystemPlugin.stamina.StaminaManager;
+import org.maks.mineSystemPlugin.model.SphereData;
+import org.maks.mineSystemPlugin.repository.SphereRepository;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -116,14 +118,16 @@ public class SphereManager {
     private final Random random = new Random();
     private final int maxSpheres;
     private final StaminaManager stamina;
+    private final SphereRepository sphereRepository;
 
     private record HologramData(ArmorStand stand, String name, int max) {}
     private final Map<Location, HologramData> holograms = new HashMap<>();
     private final Map<Location, BukkitTask> hideTasks = new HashMap<>();
 
-    public SphereManager(Plugin plugin, StaminaManager stamina) {
+    public SphereManager(Plugin plugin, StaminaManager stamina, SphereRepository sphereRepository) {
         this.plugin = plugin;
         this.stamina = stamina;
+        this.sphereRepository = sphereRepository;
         this.maxSpheres = 20;
     }
 
@@ -173,45 +177,69 @@ public class SphereManager {
             Clipboard clipboard = reader.read();
             Map<BlockVector3, OreVariant> variants = replacePlaceholders(clipboard, premium);
 
-            try (EditSession editSession = WorldEdit.getInstance()
-                    .newEditSessionBuilder()
-                    .world(BukkitAdapter.adapt(origin.getWorld()))
-                    .build()) {
-                Operation operation = new ClipboardHolder(clipboard)
-
-                        .createPaste(editSession)
-                        .to(BlockVector3.at(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ()))
-                        .ignoreAirBlocks(false)
-                        .build();
-                Operations.complete(operation);
-            }
-
             Region clipRegion = clipboard.getRegion();
             BlockVector3 offset = BlockVector3.at(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ());
             Region region = new CuboidRegion(
                     clipRegion.getMinimumPoint().add(offset),
                     clipRegion.getMaximumPoint().add(offset));
 
+            loadRegionChunks(origin.getWorld(), region);
+
+            try (EditSession editSession = WorldEdit.getInstance()
+                    .newEditSessionBuilder()
+                    .world(BukkitAdapter.adapt(origin.getWorld()))
+                    .build()) {
+                Operation operation = new ClipboardHolder(clipboard)
+                        .createPaste(editSession)
+                        .to(offset)
+                        .ignoreAirBlocks(false)
+                        .build();
+                Operations.complete(operation);
+            }
+
             List<ArmorStand> holograms = spawnHolograms(origin, variants);
 
             populateChests(origin.getWorld(), region, type, schematic.getName());
 
-            Location tp = findSafeLocation(region, origin.getWorld());
-            if (tp != null) {
-                player.teleport(tp);
-            } else {
-                player.teleport(origin.clone().add(0.5, 1, 0.5));
-            }
-
             BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> removeSphere(player.getUniqueId()), LIFE_TIME_TICKS);
             Sphere sphere = new Sphere(type, region, task, origin.getWorld(), origin, holograms);
             active.put(player.getUniqueId(), sphere);
+            sphereRepository.save(new SphereData(player.getUniqueId(), type.name(), System.currentTimeMillis()));
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                Location tp = findSafeLocation(region, origin.getWorld());
+                if (tp != null) {
+                    player.teleport(tp);
+                } else {
+                    player.teleport(origin.clone().add(0.5, 1, 0.5));
+                }
+            }, 40L);
             Bukkit.getScheduler().runTaskLater(plugin,
                     () -> spawnConfiguredMobs(schematic.getName(), region, origin.getWorld()), 20L);
             return true;
         } catch (IOException | WorldEditException e) {
             player.sendMessage("Failed to create sphere");
             return false;
+        }
+    }
+
+    private Location randomFarLocation(World world) {
+        int distance = 10000 + random.nextInt(10001);
+        double angle = random.nextDouble() * 2 * Math.PI;
+        int x = (int) (Math.cos(angle) * distance);
+        int z = (int) (Math.sin(angle) * distance);
+        int y = world.getMaxHeight() / 2;
+        return new Location(world, x, y, z);
+    }
+
+    private void loadRegionChunks(World world, Region region) {
+        int minX = region.getMinimumPoint().getBlockX() >> 4;
+        int minZ = region.getMinimumPoint().getBlockZ() >> 4;
+        int maxX = region.getMaximumPoint().getBlockX() >> 4;
+        int maxZ = region.getMaximumPoint().getBlockZ() >> 4;
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                world.getChunkAt(x, z);
+            }
         }
     }
 
@@ -328,15 +356,6 @@ public class SphereManager {
         return null;
     }
 
-    private Location randomFarLocation(World world) {
-        int distance = 10000 + random.nextInt(10001); // 10k-20k blocks from spawn
-        double angle = random.nextDouble() * 2 * Math.PI;
-        int x = (int) (Math.cos(angle) * distance);
-        int z = (int) (Math.sin(angle) * distance);
-        int y = world.getMaxHeight() / 2;
-        return new Location(world, x, y, z);
-    }
-
     private void spawnConfiguredMobs(String schematic, Region region, World world) {
         List<Map<?, ?>> entries = ((JavaPlugin) plugin).getConfig().getMapList("mobs." + schematic);
         for (Map<?, ?> entry : entries) {
@@ -399,6 +418,7 @@ public class SphereManager {
             }
             sphere.remove();
             clearHolograms(sphere);
+            sphereRepository.save(new SphereData(uuid, sphere.getType().name(), 0L));
         }
     }
 

@@ -115,6 +115,8 @@ public class CrystalEnchantCommand implements CommandExecutor, Listener {
             }
             List<EnchantType> enchants = chooseEnchantments();
             applyEnchantments(menu.tool, enchants);
+            player.getInventory().setItemInMainHand(menu.tool);
+            player.updateInventory(); // opcjonalnie, aby odświeżyć ekwipunek
             player.sendMessage(ChatColor.GREEN + "Pickaxe enchanted!");
             player.closeInventory();
         } else if (event.getSlot() == 22) {

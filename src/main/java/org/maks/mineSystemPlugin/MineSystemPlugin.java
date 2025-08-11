@@ -21,6 +21,8 @@ import org.maks.mineSystemPlugin.database.DatabaseManager;
 import org.maks.mineSystemPlugin.repository.QuestRepository;
 import org.maks.mineSystemPlugin.repository.LootRepository;
 import org.maks.mineSystemPlugin.repository.SpecialLootRepository;
+import org.maks.mineSystemPlugin.repository.PlayerRepository;
+import org.maks.mineSystemPlugin.repository.SphereRepository;
 import org.maks.mineSystemPlugin.sphere.SphereManager;
 import org.maks.mineSystemPlugin.sphere.SphereListener;
 import org.maks.mineSystemPlugin.sphere.SphereType;
@@ -53,6 +55,8 @@ public final class MineSystemPlugin extends JavaPlugin {
     private LootRepository lootRepository;
     private SpecialLootManager specialLootManager;
     private SpecialLootRepository specialLootRepository;
+    private PlayerRepository playerRepository;
+    private SphereRepository sphereRepository;
     private Economy economy;
 
     private static final Map<String, Integer> ORE_DURABILITY = Map.ofEntries(
@@ -100,15 +104,17 @@ public final class MineSystemPlugin extends JavaPlugin {
         setupEconomy();
         database = new DatabaseManager(this);
         questRepository = new QuestRepository(database);
+        playerRepository = new PlayerRepository(database);
+        sphereRepository = new SphereRepository(database);
 
-        staminaManager = new StaminaManager(this, 100, Duration.ofHours(12), questRepository);
+        staminaManager = new StaminaManager(this, 100, Duration.ofHours(12), questRepository, playerRepository);
         lootManager = new LootManager();
         lootRepository = new LootRepository(database);
         lootManager.setProbabilities(lootRepository.load().join());
         specialLootManager = new SpecialLootManager();
         specialLootRepository = new SpecialLootRepository(database);
         specialLootRepository.loadAll().join().forEach(specialLootManager::setLoot);
-        sphereManager = new SphereManager(this, staminaManager);
+        sphereManager = new SphereManager(this, staminaManager, sphereRepository);
         pickaxeManager = new PickaxeManager(this);
         getCommand("loot").setExecutor(new LootCommand(this, lootRepository, lootManager));
         getCommand("specialloot").setExecutor(new SpecialLootCommand(this, specialLootRepository, specialLootManager));
@@ -166,6 +172,9 @@ public final class MineSystemPlugin extends JavaPlugin {
         }
         if (pickaxeManager != null) {
             pickaxeManager.saveAll();
+        }
+        if (staminaManager != null) {
+            staminaManager.saveAll();
         }
         if (database != null) {
             database.close();

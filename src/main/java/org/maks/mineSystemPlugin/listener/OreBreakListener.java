@@ -30,12 +30,16 @@ public class OreBreakListener implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
         Material type = block.getType();
         if (!type.toString().endsWith("_ORE")) {
             return;
+        }
+
+        if (plugin.isCustomOre(type)) {
+            return; // handled by BlockBreakListener
         }
 
         if (!plugin.getSphereManager().isInsideSphere(block.getLocation())) {

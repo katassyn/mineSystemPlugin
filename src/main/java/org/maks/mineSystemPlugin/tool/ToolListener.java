@@ -13,16 +13,16 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.Plugin;
+import org.maks.mineSystemPlugin.MineSystemPlugin;
 
 /**
  * Listener handling custom tool behaviour such as durability and duplicate drops.
  */
 public class ToolListener implements Listener {
 
-    private final Plugin plugin;
+    private final MineSystemPlugin plugin;
 
-    public ToolListener(Plugin plugin) {
+    public ToolListener(MineSystemPlugin plugin) {
         this.plugin = plugin;
     }
 
@@ -35,8 +35,12 @@ public class ToolListener implements Listener {
         }
 
         if (!event.isCancelled()) {
-            // check canDestroy list
-            if (!canDestroy(tool, event.getBlock())) {
+            Block block = event.getBlock();
+            boolean insideSphere = plugin.getSphereManager().isInsideSphere(block.getLocation());
+            boolean bypass = player.isOp() || player.hasPermission("minesystem.admin");
+
+            // restrict breaking inside spheres unless allowed
+            if (insideSphere && !bypass && !canDestroy(tool, block)) {
                 event.setCancelled(true);
                 return;
             }

@@ -374,11 +374,20 @@ public class SphereManager {
         return sb.toString();
     }
 
-    public void updateHologram(Location loc, int remaining) {
+    public void updateHologram(Location loc, String oreId, int remaining) {
         loc = loc.toBlockLocation();
         HologramData data = holograms.get(loc);
         if (data == null) {
-            return;
+            MineSystemPlugin pluginImpl = (MineSystemPlugin) plugin;
+            int max = pluginImpl.getOreDurability(oreId);
+            String display = addSpaces(oreId);
+            ArmorStand stand = loc.getWorld().spawn(loc.clone().add(0.5, 1.2, 0.5), ArmorStand.class, as -> {
+                as.setInvisible(true);
+                as.setMarker(true);
+                as.setGravity(false);
+            });
+            data = new HologramData(stand, display, max);
+            holograms.put(loc, data);
         }
         if (remaining <= 0) {
             BukkitTask task = hideTasks.remove(loc);
@@ -466,6 +475,13 @@ public class SphereManager {
     private void removeSphere(UUID uuid, Player player) {
         Sphere sphere = active.remove(uuid);
         if (sphere != null) {
+            if (plugin instanceof MineSystemPlugin mine) {
+                if (player != null) {
+                    mine.handleSphereEnd(player);
+                } else {
+                    mine.resetOreCount(uuid);
+                }
+            }
             if (player != null) {
                 player.sendTitle(ChatColor.RED + "Time's up!",
                         ChatColor.RED + "Returning to spawn", 10, 70, 20);

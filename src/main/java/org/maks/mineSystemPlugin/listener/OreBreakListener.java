@@ -10,21 +10,13 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
 import org.maks.mineSystemPlugin.events.OreMinedEvent;
-import org.maks.mineSystemPlugin.item.CustomItems;
 import org.maks.mineSystemPlugin.tool.CustomTool;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
-import java.util.Random;
 
 public class OreBreakListener implements Listener {
 
-    private static final List<String> BONUS_ITEMS =
-            Arrays.asList("ore_I", "ore_II", "ore_III");
-
     private final MineSystemPlugin plugin;
-    private final Random random = new Random();
 
     public OreBreakListener(MineSystemPlugin plugin) {
         this.plugin = plugin;
@@ -61,16 +53,9 @@ public class OreBreakListener implements Listener {
         int pickaxeLevel = CustomTool.getToolLevel(tool);
         Bukkit.getPluginManager().callEvent(new OreMinedEvent(player, type, amount, pickaxeLevel));
 
-        int total = plugin.incrementOreCount();
+        int total = plugin.incrementOreCount(player.getUniqueId());
         if (total % 20 == 0) {
-            int bonus = random.nextInt(3) + 1;
-            for (int i = 0; i < bonus; i++) {
-                String rewardId = BONUS_ITEMS.get(random.nextInt(BONUS_ITEMS.size()));
-                ItemStack reward = CustomItems.get(rewardId);
-                if (reward != null) {
-                    block.getWorld().dropItemNaturally(block.getLocation(), reward.clone());
-                }
-            }
+            plugin.dropRandomOreReward(block.getLocation());
         }
     }
 }

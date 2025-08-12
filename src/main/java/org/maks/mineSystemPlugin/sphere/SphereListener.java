@@ -23,8 +23,6 @@ public class SphereListener implements Listener {
 
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
-        if (manager.isInsideSphere(event.getEntity().getLocation())) {
-            manager.removeSphereOnDeath(event.getEntity());
-        }
+        manager.removeSphereOnDeath(event.getEntity());
     }
 }

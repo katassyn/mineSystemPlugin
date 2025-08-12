@@ -28,3 +28,7 @@ commands:
     description: Edit loot for special schematics
     usage: /specialloot <schematic>
     permission: minesystemplugin.mine
+  stamin:
+    description: Check your stamina
+    usage: /stamin
+    permission: minesystemplugin.mine

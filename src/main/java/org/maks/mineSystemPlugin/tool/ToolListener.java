@@ -3,6 +3,7 @@ package org.maks.mineSystemPlugin.tool;
 import java.util.Collection;
 
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -11,6 +12,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
 
 /**
@@ -20,10 +22,12 @@ public class ToolListener implements Listener {
 
     private final MineSystemPlugin plugin;
     private final boolean debug;
+    private final NamespacedKey toolKey;
 
     public ToolListener(MineSystemPlugin plugin) {
         this.plugin = plugin;
         this.debug = plugin.getConfig().getBoolean("debug.toolListener", false);
+        this.toolKey = new NamespacedKey(plugin, "custom_tool");
     }
 
     /**
@@ -95,10 +99,20 @@ public class ToolListener implements Listener {
     }
 
     private boolean canDestroy(ItemStack tool, Block block) {
-        if (!tool.hasItemMeta()) return true;
-        var meta = tool.getItemMeta();
+        if (!tool.hasItemMeta()) {
+            return false;
+        }
+        ItemMeta meta = tool.getItemMeta();
+
+        // Only allow tools created by this plugin
+        if (!meta.getPersistentDataContainer().has(toolKey, PersistentDataType.BYTE)) {
+            return false;
+        }
+
         var canDestroy = meta.getCanDestroy();
-        if (canDestroy == null || canDestroy.isEmpty()) return true;
+        if (canDestroy == null || canDestroy.isEmpty()) {
+            return false;
+        }
         return canDestroy.contains(block.getType());
     }
 

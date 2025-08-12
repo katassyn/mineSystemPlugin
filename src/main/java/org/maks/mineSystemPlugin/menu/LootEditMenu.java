@@ -41,6 +41,7 @@ public class LootEditMenu implements InventoryHolder, Listener {
     private final Inventory inventory;
     private final NamespacedKey chanceKey;
     private boolean cancelClicked = false;
+    private boolean saveClicked = false;
 
     public LootEditMenu(JavaPlugin plugin, LootRepository storage, LootManager lootManager) {
         this.plugin = plugin;
@@ -139,6 +140,7 @@ public class LootEditMenu implements InventoryHolder, Listener {
             event.setCancelled(true);
 
             if (slot == SAVE_SLOT) {
+                saveClicked = true;
                 saveChanges();
                 event.getWhoClicked().closeInventory();
                 return;
@@ -226,7 +228,7 @@ public class LootEditMenu implements InventoryHolder, Listener {
             return;
         }
         HandlerList.unregisterAll(this);
-        if (!cancelClicked) {
+        if (!cancelClicked && !saveClicked) {
             saveChanges();
         }
     }

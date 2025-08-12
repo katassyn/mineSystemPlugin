@@ -19,6 +19,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.GameMode;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
@@ -120,6 +121,8 @@ public class SphereManager {
     private final int maxSpheres;
     private final StaminaManager stamina;
     private final SphereRepository sphereRepository;
+    private final Map<UUID, GameMode> previousModes = new HashMap<>();
+    private final boolean debug;
 
     private record HologramData(ArmorStand stand, String name, int max) {}
     private final Map<Location, HologramData> holograms = new HashMap<>();
@@ -130,6 +133,8 @@ public class SphereManager {
         this.stamina = stamina;
         this.sphereRepository = sphereRepository;
         this.maxSpheres = 20;
+        this.debug = plugin instanceof MineSystemPlugin mine
+                && mine.getConfig().getBoolean("debug.toolListener", false);
     }
 
     /**
@@ -251,6 +256,7 @@ public class SphereManager {
             }
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 player.teleport(teleport);
+                handleMove(player, teleport);
                 String coords = String.format("%d %d %d", teleport.getBlockX(), teleport.getBlockY() - 1, teleport.getBlockZ());
                 player.sendMessage(ChatColor.YELLOW + "Teleported to sphere at " + coords);
 
@@ -459,6 +465,35 @@ public class SphereManager {
         return Material.COAL_ORE;
     }
 
+    public void handleMove(Player player, Location to) {
+        Sphere sphere = active.get(player.getUniqueId());
+        if (sphere == null) {
+            return;
+        }
+        boolean inside = sphere.getRegion().contains(BlockVector3.at(to.getBlockX(), to.getBlockY(), to.getBlockZ()));
+        if (inside) {
+            if (!previousModes.containsKey(player.getUniqueId())) {
+                previousModes.put(player.getUniqueId(), player.getGameMode());
+                player.setGameMode(GameMode.SURVIVAL);
+                if (debug) {
+                    plugin.getLogger().info("[SphereManager] Set " + player.getName() + " to SURVIVAL inside sphere");
+                }
+            }
+        } else {
+            restoreGameMode(player);
+        }
+    }
+
+    public void restoreGameMode(Player player) {
+        GameMode prev = previousModes.remove(player.getUniqueId());
+        if (prev != null) {
+            player.setGameMode(prev);
+            if (debug) {
+                plugin.getLogger().info("[SphereManager] Restored " + player.getName() + " to " + prev);
+            }
+        }
+    }
+
     public void removeSphere(UUID uuid) {
         removeSphere(uuid, Bukkit.getPlayer(uuid));
     }
@@ -474,25 +509,29 @@ public class SphereManager {
     private void removeSphere(UUID uuid, Player player) {
         Sphere sphere = active.remove(uuid);
         if (sphere != null) {
+            Player p = player != null ? player : Bukkit.getPlayer(uuid);
+            if (p != null) {
+                restoreGameMode(p);
+            }
             if (plugin instanceof MineSystemPlugin mine) {
-                if (player != null) {
-                    mine.handleSphereEnd(player);
+                if (p != null) {
+                    mine.handleSphereEnd(p);
                 } else {
                     mine.resetOreCount(uuid);
                 }
             }
-            if (player != null) {
-                player.sendTitle(ChatColor.RED + "Time's up!",
+            if (p != null) {
+                p.sendTitle(ChatColor.RED + "Time's up!",
                         ChatColor.RED + "Returning to spawn", 10, 70, 20);
                 Plugin essentials = Bukkit.getPluginManager().getPlugin("Essentials");
                 if (essentials != null && essentials.isEnabled()) {
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "spawn " + player.getName());
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "spawn " + p.getName());
                 } else {
-                    player.teleport(player.getWorld().getSpawnLocation());
+                    p.teleport(p.getWorld().getSpawnLocation());
                 }
 
                 Bukkit.getPluginManager().callEvent(
-                        new SphereCompleteEvent(player, sphere.getType().name(), Map.of())
+                        new SphereCompleteEvent(p, sphere.getType().name(), Map.of())
                 );
             }
             sphere.remove();

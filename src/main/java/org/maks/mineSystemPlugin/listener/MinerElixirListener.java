@@ -6,6 +6,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.block.Action;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
+
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.maks.mineSystemPlugin.stamina.StaminaManager;
@@ -28,9 +30,19 @@ public class MinerElixirListener implements Listener {
             return;
         }
 
+        // Only process main-hand interactions to avoid double firing
+        if (event.getHand() != EquipmentSlot.HAND) {
+            return;
+        }
+
         ItemStack item = event.getItem();
         if (item == null) {
-            return;
+            // When clicking in the air, getItem may be null even if the player is holding the elixir
+            item = event.getPlayer().getInventory().getItem(event.getHand());
+            if (item == null) {
+                return;
+            }
+
         }
 
         ItemMeta meta = item.getItemMeta();

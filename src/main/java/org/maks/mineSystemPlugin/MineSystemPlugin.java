@@ -15,6 +15,7 @@ import java.io.File;
 import org.maks.mineSystemPlugin.command.LootCommand;
 import org.maks.mineSystemPlugin.command.MineCommand;
 import org.maks.mineSystemPlugin.command.SpecialLootCommand;
+import org.maks.mineSystemPlugin.command.StaminaCommand;
 import org.maks.mineSystemPlugin.managers.PickaxeManager;
 import org.maks.mineSystemPlugin.stamina.StaminaManager;
 import org.maks.mineSystemPlugin.database.DatabaseManager;
@@ -41,6 +42,11 @@ import org.maks.mineSystemPlugin.sphere.Tier;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.Random;
+
+import org.bukkit.inventory.ItemStack;
+import org.maks.mineSystemPlugin.item.CustomItems;
 
 /**
  * Main plugin entry point.
@@ -105,7 +111,10 @@ public final class MineSystemPlugin extends JavaPlugin {
 
     private final Map<Location, Integer> blockHits = new HashMap<>();
     private final Map<Location, String> blockOreTypes = new HashMap<>();
-    private int oreCount;
+    private final Map<UUID, Integer> oreCounts = new HashMap<>();
+    private final Random random = new Random();
+
+    private static final List<String> BONUS_ITEMS = List.of("ore_I", "ore_II", "ore_III");
 
     @Override
     public void onEnable() {
@@ -136,6 +145,7 @@ public final class MineSystemPlugin extends JavaPlugin {
         getCommand("mine_enchant").setExecutor(ceCommand);
         registerListener(ceCommand);
         getCommand("mine").setExecutor(new MineCommand(this, sphereManager));
+        getCommand("stamin").setExecutor(new StaminaCommand(staminaManager));
         getCommand("spawnsphere").setExecutor(this);
 
         registerListener(new SpecialBlockListener(this));
@@ -253,9 +263,30 @@ public final class MineSystemPlugin extends JavaPlugin {
         return required - hits;
     }
 
-    public int incrementOreCount() {
-        oreCount++;
-        return oreCount;
+    public int incrementOreCount(UUID uuid) {
+        int total = oreCounts.getOrDefault(uuid, 0) + 1;
+        oreCounts.put(uuid, total);
+        return total;
+    }
+
+    public void resetOreCount(UUID uuid) {
+        oreCounts.remove(uuid);
+    }
+
+    public void dropRandomOreReward(Location loc) {
+        int bonus = random.nextInt(3) + 1;
+        for (int i = 0; i < bonus; i++) {
+            String rewardId = BONUS_ITEMS.get(random.nextInt(BONUS_ITEMS.size()));
+            ItemStack reward = CustomItems.get(rewardId);
+            if (reward != null) {
+                loc.getWorld().dropItemNaturally(loc, reward.clone());
+            }
+        }
+    }
+
+    public void handleSphereEnd(Player player) {
+        dropRandomOreReward(player.getLocation());
+        resetOreCount(player.getUniqueId());
     }
 
     /**

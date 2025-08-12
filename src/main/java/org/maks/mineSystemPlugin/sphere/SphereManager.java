@@ -475,6 +475,13 @@ public class SphereManager {
     private void removeSphere(UUID uuid, Player player) {
         Sphere sphere = active.remove(uuid);
         if (sphere != null) {
+            if (plugin instanceof MineSystemPlugin mine) {
+                if (player != null) {
+                    mine.handleSphereEnd(player);
+                } else {
+                    mine.resetOreCount(uuid);
+                }
+            }
             if (player != null) {
                 player.sendTitle(ChatColor.RED + "Time's up!",
                         ChatColor.RED + "Returning to spawn", 10, 70, 20);

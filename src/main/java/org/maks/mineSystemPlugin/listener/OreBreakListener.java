@@ -30,16 +30,21 @@ public class OreBreakListener implements Listener {
             return;
         }
 
+        if (plugin.consumePlayerPlaced(block.getLocation())) {
+            return;
+        }
+
         if (plugin.isCustomOre(type)) {
             return; // handled by BlockBreakListener
         }
 
-        if (!plugin.getSphereManager().isInsideSphere(block.getLocation())) {
+        Player player = event.getPlayer();
+        boolean bypass = player.isOp() || player.hasPermission("minesystem.admin");
+        if (!bypass && !plugin.getSphereManager().isInsideSphere(block.getLocation())) {
             event.setCancelled(true);
             return;
         }
 
-        Player player = event.getPlayer();
         ItemStack tool = player.getInventory().getItemInMainHand();
 
         Collection<ItemStack> drops = block.getDrops(tool);

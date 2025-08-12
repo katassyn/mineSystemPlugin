@@ -28,6 +28,7 @@ import org.maks.mineSystemPlugin.sphere.SphereManager;
 import org.maks.mineSystemPlugin.sphere.SphereListener;
 import org.maks.mineSystemPlugin.sphere.SphereType;
 import org.maks.mineSystemPlugin.listener.BlockBreakListener;
+import org.maks.mineSystemPlugin.listener.BlockPlaceListener;
 import org.maks.mineSystemPlugin.listener.OreBreakListener;
 import org.maks.mineSystemPlugin.tool.ToolListener;
 import org.maks.mineSystemPlugin.SpecialBlockListener;
@@ -40,10 +41,12 @@ import java.time.Duration;
 import org.maks.mineSystemPlugin.sphere.Tier;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 
 import org.bukkit.inventory.ItemStack;
 import org.maks.mineSystemPlugin.item.CustomItems;
@@ -112,6 +115,7 @@ public final class MineSystemPlugin extends JavaPlugin {
     private final Map<Location, Integer> blockHits = new HashMap<>();
     private final Map<Location, String> blockOreTypes = new HashMap<>();
     private final Map<UUID, Integer> oreCounts = new HashMap<>();
+    private final Set<Location> placedOres = new HashSet<>();
     private final Random random = new Random();
 
     private static final List<String> BONUS_ITEMS = List.of("ore_I", "ore_II", "ore_III");
@@ -151,6 +155,7 @@ public final class MineSystemPlugin extends JavaPlugin {
         registerListener(new SpecialBlockListener(this));
         registerListener(new SphereListener(sphereManager));
         registerListener(new BlockBreakListener(this));
+        registerListener(new BlockPlaceListener(this));
         registerListener(new OreBreakListener(this));
         registerListener(new ToolListener(this));
     }
@@ -271,6 +276,14 @@ public final class MineSystemPlugin extends JavaPlugin {
 
     public void resetOreCount(UUID uuid) {
         oreCounts.remove(uuid);
+    }
+
+    public void markPlayerPlaced(Location location) {
+        placedOres.add(location.toBlockLocation());
+    }
+
+    public boolean consumePlayerPlaced(Location location) {
+        return placedOres.remove(location.toBlockLocation());
     }
 
     public void dropRandomOreReward(Player player, Location loc) {

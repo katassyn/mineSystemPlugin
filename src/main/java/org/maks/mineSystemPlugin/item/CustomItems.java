@@ -128,6 +128,7 @@ public final class CustomItems {
 
         // Consumables
         register("miner_elixir", Material.BEEF, "&5Miner Elixir",
+
                 List.of("&7Refresh Mining Stamin"), true, true);
     }
 

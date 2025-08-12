@@ -39,6 +39,7 @@ public class MinerElixirListener implements Listener {
         }
         String name = ChatColor.stripColor(meta.getDisplayName());
         if (!"Miner Elixir".equalsIgnoreCase(name)) {
+
             return;
         }
 

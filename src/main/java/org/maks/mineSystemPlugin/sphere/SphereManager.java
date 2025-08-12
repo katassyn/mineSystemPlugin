@@ -342,7 +342,7 @@ public class SphereManager {
     private void populateChests(World world, Region region, SphereType type, String schematicName) {
         MineSystemPlugin pluginImpl = (MineSystemPlugin) plugin;
         SpecialLootManager special = pluginImpl.getSpecialLootManager();
-        Map<Material, SpecialLootEntry> specialLoot = special.getLoot(schematicName);
+        Map<Material, SpecialLootEntry> specialLoot = (Map<Material, SpecialLootEntry>) special.getLoot(schematicName);
         LootManager loot = pluginImpl.getLootManager();
         boolean treasure = type == SphereType.TREASURE && (specialLoot == null || specialLoot.isEmpty());
         for (BlockVector3 vec : region) {

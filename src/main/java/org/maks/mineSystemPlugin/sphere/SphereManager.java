@@ -79,8 +79,8 @@ public class SphereManager {
     private static final Map<Material, OreVariant[]> ORE_VARIANTS = Map.of(
             Material.COAL_ORE, new OreVariant[]{
                     new OreVariant("Hematite", 40),
-                    new OreVariant("Black Spinel", 70),
-                    new OreVariant("Black Diamond", 120)
+                    new OreVariant("BlackSpinel", 70),
+                    new OreVariant("BlackDiamond", 120)
             },
             Material.IRON_ORE, new OreVariant[]{
                     new OreVariant("Magnetite", 50),
@@ -90,22 +90,22 @@ public class SphereManager {
             Material.LAPIS_ORE, new OreVariant[]{
                     new OreVariant("Azurite", 60),
                     new OreVariant("Tanzanite", 100),
-                    new OreVariant("Blue Sapphire", 150)
+                    new OreVariant("BlueSapphire", 150)
             },
             Material.REDSTONE_ORE, new OreVariant[]{
                     new OreVariant("Carnelian", 65),
-                    new OreVariant("Red Spinel", 115),
-                    new OreVariant("Pigeon Blood Ruby", 175)
+                    new OreVariant("RedSpinel", 115),
+                    new OreVariant("PigeonBloodRuby", 175)
             },
             Material.GOLD_ORE, new OreVariant[]{
                     new OreVariant("Pyrite", 75),
-                    new OreVariant("Yellow Topaz", 125),
-                    new OreVariant("Yellow Sapphire", 180)
+                    new OreVariant("YellowTopaz", 125),
+                    new OreVariant("YellowSapphire", 180)
             },
             Material.EMERALD_ORE, new OreVariant[]{
                     new OreVariant("Malachite", 90),
                     new OreVariant("Peridot", 130),
-                    new OreVariant("Tropiche Emerald", 200)
+                    new OreVariant("TropicheEmerald", 200)
             },
             Material.DIAMOND_ORE, new OreVariant[]{
                     new OreVariant("Danburite", 100),
@@ -192,10 +192,11 @@ public class SphereManager {
             BlockVector3 goldVec = findGoldBlock(clipboard);
 
             Region clipRegion = clipboard.getRegion();
-            BlockVector3 offset = BlockVector3.at(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ());
+            BlockVector3 pastePos = BlockVector3.at(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ());
+            BlockVector3 shift = pastePos.subtract(clipboard.getOrigin());
             Region region = new CuboidRegion(
-                    clipRegion.getMinimumPoint().add(offset),
-                    clipRegion.getMaximumPoint().add(offset));
+                    clipRegion.getMinimumPoint().add(shift),
+                    clipRegion.getMaximumPoint().add(shift));
 
             loadRegionChunks(origin.getWorld(), region);
 
@@ -205,13 +206,13 @@ public class SphereManager {
                     .build()) {
                 Operation operation = new ClipboardHolder(clipboard)
                         .createPaste(editSession)
-                        .to(offset)
+                        .to(pastePos)
                         .ignoreAirBlocks(false)
                         .build();
                 Operations.complete(operation);
             }
 
-            List<ArmorStand> holograms = spawnHolograms(origin, variants);
+            List<ArmorStand> holograms = spawnHolograms(origin.getWorld(), variants, shift);
 
             populateChests(origin.getWorld(), region, type, schematic.getName());
 
@@ -243,11 +244,13 @@ public class SphereManager {
             Sphere sphere = new Sphere(type, region, task, origin.getWorld(), origin, holograms, warnings);
             active.put(player.getUniqueId(), sphere);
             sphereRepository.save(new SphereData(player.getUniqueId(), type.name(), System.currentTimeMillis()));
-            Location teleport = origin.clone();
+            Location teleport;
             if (goldVec != null) {
-                teleport.add(goldVec.getX(), goldVec.getY(), goldVec.getZ());
+                BlockVector3 t = goldVec.add(shift);
+                teleport = new Location(origin.getWorld(), t.getX() + 0.5, t.getY() + 1, t.getZ() + 0.5);
+            } else {
+                teleport = origin.clone().add(0.5, 1, 0.5);
             }
-            teleport.add(0.5, 1, 0.5);
             plugin.getLogger().info(String.format("Spawned %s sphere for %s via %s at %d %d %d",
                     type.name(), player.getName(), source,
                     teleport.getBlockX(), teleport.getBlockY() - 1, teleport.getBlockZ()));
@@ -315,27 +318,30 @@ public class SphereManager {
         return null;
     }
 
-    private List<ArmorStand> spawnHolograms(Location origin, Map<BlockVector3, OreVariant> variants) {
+    private List<ArmorStand> spawnHolograms(World world, Map<BlockVector3, OreVariant> variants, BlockVector3 shift) {
         List<ArmorStand> list = new ArrayList<>();
-        World world = origin.getWorld();
+        MineSystemPlugin pluginImpl = (MineSystemPlugin) plugin;
         for (Map.Entry<BlockVector3, OreVariant> entry : variants.entrySet()) {
-            BlockVector3 vec = entry.getKey();
+            BlockVector3 vec = entry.getKey().add(shift);
             OreVariant data = entry.getValue();
-            Location blockLoc = new Location(world,
-                    origin.getBlockX() + vec.getX(),
-                    origin.getBlockY() + vec.getY(),
-                    origin.getBlockZ() + vec.getZ());
+            Location blockLoc = new Location(world, vec.getX(), vec.getY(), vec.getZ());
+            String display = addSpaces(data.name());
             ArmorStand stand = world.spawn(blockLoc.clone().add(0.5, 1.2, 0.5), ArmorStand.class, as -> {
                 as.setInvisible(true);
                 as.setMarker(true);
                 as.setGravity(false);
-                as.setCustomName(formatName(data.name(), data.durability(), data.durability()));
+                as.setCustomName(formatName(display, data.durability(), data.durability()));
                 as.setCustomNameVisible(false);
             });
-            holograms.put(blockLoc, new HologramData(stand, data.name(), data.durability()));
+            holograms.put(blockLoc, new HologramData(stand, display, data.durability()));
+            pluginImpl.registerOre(blockLoc, data.name());
             list.add(stand);
         }
         return list;
+    }
+
+    private String addSpaces(String id) {
+        return id.replaceAll("(?<=.)([A-Z])", " $1");
     }
 
     private void populateChests(World world, Region region, SphereType type, String schematicName) {

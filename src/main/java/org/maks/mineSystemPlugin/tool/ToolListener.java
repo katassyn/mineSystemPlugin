@@ -3,7 +3,6 @@ package org.maks.mineSystemPlugin.tool;
 import java.util.Collection;
 
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -12,7 +11,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
 
 /**
@@ -66,13 +64,7 @@ public class ToolListener implements Listener {
         // durability handling
         CustomTool.ensureDurability(tool, plugin);
 
-        int before = readDurability(tool);
-        plugin.getLogger().info(String.format("Tool %s durability before: %d (unbreakable=%s)",
-                tool.getType(), before, tool.getItemMeta().isUnbreakable()));
         boolean broken = CustomTool.damage(tool, plugin);
-        int after = readDurability(tool);
-        plugin.getLogger().info(String.format("Tool %s durability after: %d (broken=%s)",
-                tool.getType(), after, broken));
         if (broken) {
             player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
         } else {
@@ -89,11 +81,4 @@ public class ToolListener implements Listener {
         return canDestroy.contains(block.getType());
     }
 
-    private int readDurability(ItemStack tool) {
-        ItemMeta meta = tool.getItemMeta();
-        if (meta == null) return -1;
-        Integer cur = meta.getPersistentDataContainer()
-                .get(new NamespacedKey(plugin, "durability"), PersistentDataType.INTEGER);
-        return cur == null ? -1 : cur;
-    }
 }

@@ -30,14 +30,17 @@ public class StaminaCommand implements CommandExecutor {
         int stamina = staminaManager.getStamina(uuid);
         int max = staminaManager.getMaxStamina(uuid);
         Duration remaining = staminaManager.getTimeUntilReset(uuid);
-        long minutes = remaining.toMinutes();
-        long seconds = remaining.minusMinutes(minutes).getSeconds();
+        long hours = remaining.toHours();
+        long minutes = remaining.minusHours(hours).toMinutes();
+        player.sendMessage(ChatColor.GRAY + "-------------------");
         player.sendMessage(ChatColor.YELLOW + "Stamina: " + stamina + "/" + max);
         if (!remaining.isZero()) {
-            player.sendMessage(ChatColor.YELLOW + "Resets in: " + minutes + "m " + seconds + "s");
+            player.sendMessage(ChatColor.YELLOW + "Resets in: " + hours + "h " + minutes + "m");
         } else {
             player.sendMessage(ChatColor.YELLOW + "Stamina is full.");
         }
+        player.sendMessage(ChatColor.GRAY + "-------------------");
+
         return true;
     }
 }

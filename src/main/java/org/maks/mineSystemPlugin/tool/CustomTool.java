@@ -110,7 +110,6 @@ public final class CustomTool {
         }
 
         item.setItemMeta(meta);
-        plugin.getLogger().info(String.format("Initialised durability for %s to %d", item.getType(), value));
     }
 
     /**

@@ -249,9 +249,6 @@ public class SphereManager {
             } else {
                 teleport = origin.clone().add(0.5, 1, 0.5);
             }
-            plugin.getLogger().info(String.format("Spawned %s sphere for %s via %s at %d %d %d",
-                    type.name(), player.getName(), source,
-                    teleport.getBlockX(), teleport.getBlockY() - 1, teleport.getBlockZ()));
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 player.teleport(teleport);
                 String coords = String.format("%d %d %d", teleport.getBlockX(), teleport.getBlockY() - 1, teleport.getBlockZ());

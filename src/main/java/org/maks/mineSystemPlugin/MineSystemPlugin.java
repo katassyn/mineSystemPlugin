@@ -273,7 +273,8 @@ public final class MineSystemPlugin extends JavaPlugin {
         oreCounts.remove(uuid);
     }
 
-    public void dropRandomOreReward(Location loc) {
+    public void dropRandomOreReward(Player player, Location loc) {
+
         int bonus = random.nextInt(3) + 1;
         for (int i = 0; i < bonus; i++) {
             String rewardId = BONUS_ITEMS.get(random.nextInt(BONUS_ITEMS.size()));
@@ -284,8 +285,13 @@ public final class MineSystemPlugin extends JavaPlugin {
         }
     }
 
+    public void dropRandomOreReward(Player player) {
+        dropRandomOreReward(player, player.getLocation());
+    }
+
     public void handleSphereEnd(Player player) {
-        dropRandomOreReward(player.getLocation());
+        dropRandomOreReward(player);
+
         resetOreCount(player.getUniqueId());
     }
 
@@ -301,8 +307,6 @@ public final class MineSystemPlugin extends JavaPlugin {
         Location loc = location.toBlockLocation();
         blockOreTypes.put(loc, oreId);
         blockHits.remove(loc);
-        getLogger().info(String.format("Registered ore %s at %d %d %d", oreId,
-                loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
 
     }
 }

@@ -127,7 +127,8 @@ public final class CustomItems {
                 List.of("§o&7Mine currency"), true, true);
 
         // Consumables
-        register("miner_elixir", Material.RAW_BEEF, "&5Miner Elixir",
+        register("miner_elixir", Material.BEEF, "&5Miner Elixir",
+
                 List.of("&7Refresh Mining Stamin"), true, true);
     }
 

@@ -1,12 +1,13 @@
 package org.maks.mineSystemPlugin.listener;
 
+import org.bukkit.ChatColor;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.block.Action;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.maks.mineSystemPlugin.item.CustomItems;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.maks.mineSystemPlugin.stamina.StaminaManager;
 
 /**
@@ -32,8 +33,13 @@ public class MinerElixirListener implements Listener {
             return;
         }
 
-        String id = CustomItems.getId(item);
-        if (!"miner_elixir".equals(id)) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null || !meta.hasDisplayName()) {
+            return;
+        }
+        String name = ChatColor.stripColor(meta.getDisplayName());
+        if (!"Miner Elixir".equalsIgnoreCase(name)) {
+
             return;
         }
 

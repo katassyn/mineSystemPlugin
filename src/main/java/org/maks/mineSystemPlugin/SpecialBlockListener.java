@@ -30,8 +30,11 @@ public class SpecialBlockListener implements Listener {
         Block block = event.getBlock();
         Material type = block.getType();
 
+        Player player = event.getPlayer();
+        boolean bypass = player.isOp() || player.hasPermission("minesystem.admin");
+
         Location loc = block.getLocation();
-        if (!plugin.getSphereManager().isInsideSphere(loc)) {
+        if (!bypass && !plugin.getSphereManager().isInsideSphere(loc)) {
             event.setCancelled(true);
             return;
         }

@@ -31,6 +31,7 @@ import org.maks.mineSystemPlugin.listener.BlockBreakListener;
 import org.maks.mineSystemPlugin.listener.BlockPlaceListener;
 import org.maks.mineSystemPlugin.listener.OreBreakListener;
 import org.maks.mineSystemPlugin.tool.ToolListener;
+import org.maks.mineSystemPlugin.listener.MinerElixirListener;
 import org.maks.mineSystemPlugin.SpecialBlockListener;
 import org.maks.mineSystemPlugin.CrystalEnchantCommand;
 import org.maks.mineSystemPlugin.RepairCommand;
@@ -158,6 +159,7 @@ public final class MineSystemPlugin extends JavaPlugin {
         registerListener(new BlockPlaceListener(this));
         registerListener(new OreBreakListener(this));
         registerListener(new ToolListener(this));
+        registerListener(new MinerElixirListener(staminaManager));
     }
 
     /**

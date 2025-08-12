@@ -27,3 +27,6 @@ sell-prices:
     Danburite: 2500000
     Goshenite: 4375000
     Cerussite: 7500000
+
+debug:
+  toolListener: false

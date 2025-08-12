@@ -219,14 +219,12 @@ public class SphereManager {
             BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> removeSphere(player.getUniqueId()), LIFE_TIME_TICKS);
 
             List<BukkitTask> warnings = new ArrayList<>();
-            warnings.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                player.sendTitle(ChatColor.YELLOW + "5 minutes remaining", "", 10, 70, 20);
-                player.sendMessage(ChatColor.YELLOW + "5 minutes remaining");
-            }, LIFE_TIME_TICKS / 2));
-            warnings.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                player.sendTitle(ChatColor.YELLOW + "1 minute remaining", "", 10, 70, 20);
-                player.sendMessage(ChatColor.YELLOW + "1 minute remaining");
-            }, LIFE_TIME_TICKS - 60L * 20L));
+            warnings.add(Bukkit.getScheduler().runTaskLater(plugin, () ->
+                    player.sendTitle(ChatColor.YELLOW + "5 minutes remaining", "", 10, 70, 20),
+                    LIFE_TIME_TICKS / 2));
+            warnings.add(Bukkit.getScheduler().runTaskLater(plugin, () ->
+                    player.sendTitle(ChatColor.YELLOW + "1 minute remaining", "", 10, 70, 20),
+                    LIFE_TIME_TICKS - 60L * 20L));
             warnings.add(new BukkitRunnable() {
                 int remaining = 10;
 
@@ -464,8 +462,8 @@ public class SphereManager {
         Sphere sphere = active.remove(uuid);
         if (sphere != null) {
             if (player != null) {
-                player.sendTitle(ChatColor.RED + "Time's up!", "", 10, 70, 20);
-                player.sendMessage(ChatColor.RED + "Sphere expired. Returning to spawn.");
+                player.sendTitle(ChatColor.RED + "Time's up!",
+                        ChatColor.RED + "Returning to spawn", 10, 70, 20);
                 Plugin essentials = Bukkit.getPluginManager().getPlugin("Essentials");
                 if (essentials != null && essentials.isEnabled()) {
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "spawn " + player.getName());

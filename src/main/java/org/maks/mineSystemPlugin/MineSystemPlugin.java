@@ -257,6 +257,9 @@ public final class MineSystemPlugin extends JavaPlugin {
     public void registerOre(Location location, String oreId) {
         blockOreTypes.put(location, oreId);
         blockHits.remove(location);
+        getLogger().info(String.format("Registered ore %s at %d %d %d", oreId,
+                location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+
     }
 }
 

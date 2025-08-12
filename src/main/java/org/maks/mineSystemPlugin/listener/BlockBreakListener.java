@@ -33,12 +33,17 @@ public class BlockBreakListener implements Listener {
             return;
         }
 
+        if (plugin.consumePlayerPlaced(block.getLocation())) {
+            return;
+        }
+
         Player player = event.getPlayer();
         boolean bypass = player.isOp() || player.hasPermission("minesystem.admin");
         if (!bypass && !plugin.getSphereManager().isInsideSphere(block.getLocation())) {
             event.setCancelled(true);
             return;
         }
+
 
         ItemStack tool = player.getInventory().getItemInMainHand();
         Material oreType = block.getType();

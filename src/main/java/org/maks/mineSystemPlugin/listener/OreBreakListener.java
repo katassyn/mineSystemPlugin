@@ -30,6 +30,10 @@ public class OreBreakListener implements Listener {
             return;
         }
 
+        if (plugin.consumePlayerPlaced(block.getLocation())) {
+            return;
+        }
+
         if (plugin.isCustomOre(type)) {
             return; // handled by BlockBreakListener
         }

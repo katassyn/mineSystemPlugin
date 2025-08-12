@@ -7,6 +7,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.block.Action;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
+
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.maks.mineSystemPlugin.stamina.StaminaManager;
@@ -41,6 +42,7 @@ public class MinerElixirListener implements Listener {
             if (item == null) {
                 return;
             }
+
         }
 
         ItemMeta meta = item.getItemMeta();
@@ -49,6 +51,7 @@ public class MinerElixirListener implements Listener {
         }
         String name = ChatColor.stripColor(meta.getDisplayName());
         if (!"Miner Elixir".equalsIgnoreCase(name)) {
+
             return;
         }
 

@@ -101,6 +101,7 @@ public class ToolListener implements Listener {
 
     private boolean canDestroy(ItemStack tool, Block block) {
         if (tool.getType() == Material.AIR || !tool.hasItemMeta()) {
+
             return false;
         }
         ItemMeta meta = tool.getItemMeta();

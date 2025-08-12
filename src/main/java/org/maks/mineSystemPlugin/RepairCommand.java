@@ -105,19 +105,33 @@ public class RepairCommand implements CommandExecutor, Listener {
         }
 
         ItemMeta meta = item.getItemMeta();
-        if (meta instanceof Damageable damageable) {
-            int missing = damageable.getDamage();
-            int max = item.getType().getMaxDurability();
-            if (missing <= 0 || max <= 0) return 0;
-            double fraction = missing / (double) max;
-            return (int) Math.ceil(materialCost * multiplier * levelSum * fraction);
-        }
-
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         NamespacedKey maxKey = new NamespacedKey(plugin, "max_durability");
         NamespacedKey curKey = new NamespacedKey(plugin, "durability");
+
         Integer max = pdc.get(maxKey, PersistentDataType.INTEGER);
         Integer cur = pdc.get(curKey, PersistentDataType.INTEGER);
+
+        if (max == null || cur == null) {
+            // Fallback to parsing the lore if persistent data is missing
+            if (meta.hasLore()) {
+                for (String line : meta.getLore()) {
+                    String stripped = ChatColor.stripColor(line);
+                    if (stripped != null && stripped.startsWith("Durability:")) {
+                        String[] parts = stripped.substring("Durability:".length()).trim().split("/");
+                        if (parts.length == 2) {
+                            try {
+                                cur = Integer.parseInt(parts[0].trim());
+                                max = Integer.parseInt(parts[1].trim());
+                            } catch (NumberFormatException ignored) {
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
         if (max != null && cur != null && max > 0) {
             int missing = max - cur;
             if (missing <= 0) return 0;
@@ -125,7 +139,15 @@ public class RepairCommand implements CommandExecutor, Listener {
             return (int) Math.ceil(materialCost * multiplier * levelSum * fraction);
         }
 
-        return materialCost * multiplier * levelSum;
+        if (meta instanceof Damageable damageable) {
+            int missing = damageable.getDamage();
+            int maxDurability = item.getType().getMaxDurability();
+            if (missing <= 0 || maxDurability <= 0) return 0;
+            double fraction = missing / (double) maxDurability;
+            return (int) Math.ceil(materialCost * multiplier * levelSum * fraction);
+        }
+
+        return 0;
     }
 
     private int materialTier(Material material) {

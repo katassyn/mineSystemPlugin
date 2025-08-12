@@ -99,6 +99,7 @@ public class SpecialLootMenu implements InventoryHolder, Listener {
         return clone;
     }
 
+
     @EventHandler
     public void onClick(InventoryClickEvent event) {
         if (event.getInventory().getHolder() != this) {

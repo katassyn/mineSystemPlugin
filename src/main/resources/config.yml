@@ -4,8 +4,6 @@ mobs:
       mythic_id: example_id
       amount: 3
 
-
-
 sell-prices:
   world: # nazwa �wiata
     Hematite: 1000000

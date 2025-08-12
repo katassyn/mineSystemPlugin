@@ -28,4 +28,19 @@ public enum ToolMaterial {
     public int getMaxDurability() {
         return maxDurability;
     }
+
+    /**
+     * Resolves the enum constant for the given Bukkit material.
+     *
+     * @param material Bukkit material of the pickaxe
+     * @return matching ToolMaterial or {@code null} if unsupported
+     */
+    public static ToolMaterial fromMaterial(Material material) {
+        for (ToolMaterial value : values()) {
+            if (value.material == material) {
+                return value;
+            }
+        }
+        return null;
+    }
 }

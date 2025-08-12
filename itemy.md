@@ -189,101 +189,178 @@ Unbreakable: true
 
 # Mining Tools
 WoodenPickaxe:
-Id: WOODEN_PICKAXE
-Display: '&6Wooden Pickaxe'
-Group: mine
-Lore:
-- ''
-- '&7A basic wooden mining tool.'
-- '&f&lDurability: 2500 / 2500'
-Options:
-Unbreakable: true
-HideFlags: true
-HideAttributes: true
+  Id: WOODEN_PICKAXE
+  MaxDurability: 2500
+  Display: '&6Wooden Pickaxe'
+  Group: mine
+  Lore:
+    - ''
+    - '&7A basic wooden mining tool.'
+    - '&f&lDurability: 2500 / 2500'
+  Options:
+    HideFlags: true
+    HideAttributes: true
+  CanBreak:
+    - coal_ore
+    - iron_ore
+    - lapis_ore
+    - redstone_ore
+    - gold_ore
+    - emerald_ore
+    - diamond_ore
+    - amethyst_block
+    - moss_block
+    - bone_block
 
 StonePickaxe:
-Id: STONE_PICKAXE
-Display: '&8Stone Pickaxe'
-Group: mine
-Lore:
-- ''
-- '&7A sturdy stone mining tool.'
-- '&f&lDurability: 5000 / 5000'
-Options:
-Unbreakable: true
-HideFlags: true
-HideAttributes: true
+  Id: STONE_PICKAXE
+  MaxDurability: 5000
+  Display: '&8Stone Pickaxe'
+  Group: mine
+  Lore:
+    - ''
+    - '&7A sturdy stone mining tool.'
+    - '&f&lDurability: 5000 / 5000'
+  Options:
+    HideFlags: true
+    HideAttributes: true
+  CanBreak:
+    - coal_ore
+    - iron_ore
+    - lapis_ore
+    - redstone_ore
+    - gold_ore
+    - emerald_ore
+    - diamond_ore
+    - amethyst_block
+    - moss_block
+    - bone_block
 
 IronPickaxe:
-Id: IRON_PICKAXE
-Display: '&fIron Pickaxe'
-Group: mine
-Lore:
-- ''
-- '&7A durable iron mining tool.'
-- '&f&lDurability: 20000 / 20000'
-Options:
-Unbreakable: true
-HideFlags: true
-HideAttributes: true
+  Id: IRON_PICKAXE
+  MaxDurability: 20000
+  Display: '&fIron Pickaxe'
+  Group: mine
+  Lore:
+    - ''
+    - '&7A durable iron mining tool.'
+    - '&f&lDurability: 20000 / 20000'
+  Options:
+    HideFlags: true
+    HideAttributes: true
+  CanBreak:
+    - coal_ore
+    - iron_ore
+    - lapis_ore
+    - redstone_ore
+    - gold_ore
+    - emerald_ore
+    - diamond_ore
+    - amethyst_block
+    - moss_block
+    - bone_block
 
 GoldenPickaxe:
-Id: GOLDEN_PICKAXE
-Display: '&eGolden Pickaxe'
-Group: mine
-Lore:
-- ''
-- '&7A fast but fragile golden mining tool.'
-- '&f&lDurability: 10000 / 10000'
-Options:
-Unbreakable: true
-HideFlags: true
-HideAttributes: true
+  Id: GOLDEN_PICKAXE
+  MaxDurability: 10000
+  Display: '&eGolden Pickaxe'
+  Group: mine
+  Lore:
+    - ''
+    - '&7A fast but fragile golden mining tool.'
+    - '&f&lDurability: 10000 / 10000'
+  Options:
+    HideFlags: true
+    HideAttributes: true
+  CanBreak:
+    - coal_ore
+    - iron_ore
+    - lapis_ore
+    - redstone_ore
+    - gold_ore
+    - emerald_ore
+    - diamond_ore
+    - amethyst_block
+    - moss_block
+    - bone_block
 
 DiamondPickaxe:
-Id: DIAMOND_PICKAXE
-Display: '&bDiamond Pickaxe'
-Group: mine
-Lore:
-- ''
-- '&7A premium diamond mining tool.'
-- '&f&lDurability: 50000 / 50000'
-Options:
-Unbreakable: true
-HideFlags: true
-HideAttributes: true
+  Id: DIAMOND_PICKAXE
+  MaxDurability: 50000
+  Display: '&bDiamond Pickaxe'
+  Group: mine
+  Lore:
+    - ''
+    - '&7A premium diamond mining tool.'
+    - '&f&lDurability: 50000 / 50000'
+  Options:
+    HideFlags: true
+    HideAttributes: true
+  CanBreak:
+    - coal_ore
+    - iron_ore
+    - lapis_ore
+    - redstone_ore
+    - gold_ore
+    - emerald_ore
+    - diamond_ore
+    - amethyst_block
+    - moss_block
+    - bone_block
 
 NetheritePickaxe:
-Id: NETHERITE_PICKAXE
-Display: '&4Netherite Pickaxe'
-Group: mine
-Lore:
-- ''
-- '&7The ultimate netherite mining tool.'
-- '&f&lDurability: 100000 / 100000'
-Options:
-Unbreakable: true
-HideFlags: true
-HideAttributes: true
+  Id: NETHERITE_PICKAXE
+  MaxDurability: 100000
+  Display: '&4Netherite Pickaxe'
+  Group: mine
+  Lore:
+    - ''
+    - '&7The ultimate netherite mining tool.'
+    - '&f&lDurability: 100000 / 100000'
+  Options:
+    HideFlags: true
+    HideAttributes: true
+  CanBreak:
+    - coal_ore
+    - iron_ore
+    - lapis_ore
+    - redstone_ore
+    - gold_ore
+    - emerald_ore
+    - diamond_ore
+    - amethyst_block
+    - moss_block
+    - bone_block
 
 # Enhanced Iron Pickaxe Example
 EnhancedIronPickaxe:
-Id: IRON_PICKAXE
-Display: '&fEnhanced Iron Pickaxe Example Name'
-Group: mine
-Enchantments:
-- DIG_SPEED:2
-- LUCK:2
-Lore:
-- '&7Mining speed: &eX &7⛏'
-- '&7Duplicate: &eX &7☘'
-- ''
-- '&7A durable iron mining tool with enhanced abilities.'
-- '&f&lDurability: 20000 / 20000'
-Options:
-Unbreakable: true
-HideFlags: true
-HideAttributes: true
+  Id: IRON_PICKAXE
+  MaxDurability: 20000
+  Display: '&fEnhanced Iron Pickaxe Example Name'
+  Group: mine
+  Enchantments:
+    - DIG_SPEED:2
+    - LUCK:2
+  Lore:
+    - '&7Mining speed: &eX &7⛏'
+    - '&7Duplicate: &eX &7☘'
+    - ''
+    - '&7A durable iron mining tool with enhanced abilities.'
+    - '&f&lDurability: 20000 / 20000'
+  Options:
+    HideFlags: true
+    HideAttributes: true
+  CanBreak:
+    - coal_ore
+    - iron_ore
+    - lapis_ore
+    - redstone_ore
+    - gold_ore
+    - emerald_ore
+    - diamond_ore
+    - amethyst_block
+    - moss_block
+    - bone_block
 
 #KOPALNIA KOPALNIA KOPALNIA
 #KOPALNIA KOPALNIA KOPALNIA

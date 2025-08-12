@@ -5,7 +5,7 @@ mobs:
       amount: 3
 
 sell-prices:
-  world: # nazwa �wiata
+  world: # nazwa świata
     Hematite: 1000000
     BlackSpinel: 1750000
     BlackDiamond: 3000000

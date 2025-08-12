@@ -20,8 +20,8 @@ import org.maks.mineSystemPlugin.SpecialLootEntry;
 import org.maks.mineSystemPlugin.SpecialLootManager;
 import org.maks.mineSystemPlugin.repository.SpecialLootRepository;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * GUI for configuring fixed loot of special schematics.
@@ -41,11 +41,11 @@ public class SpecialLootMenu implements InventoryHolder, Listener {
         this.manager = manager;
         this.inventory = Bukkit.createInventory(this, 27, ChatColor.DARK_PURPLE + "Special Loot: " + schematic);
         this.chanceKey = new NamespacedKey(plugin, "chance");
-        Map<Material, SpecialLootEntry> existing = manager.getLoot(schematic);
+        List<SpecialLootEntry> existing = manager.getLoot(schematic);
         if (existing != null) {
-            for (Map.Entry<Material, SpecialLootEntry> e : existing.entrySet()) {
-                ItemStack item = new ItemStack(e.getKey(), e.getValue().amount());
-                setChance(item, e.getValue().chance());
+            for (SpecialLootEntry e : existing) {
+                ItemStack item = e.item().clone();
+                setChance(item, e.chance());
                 inventory.addItem(item);
             }
         }
@@ -62,7 +62,10 @@ public class SpecialLootMenu implements InventoryHolder, Listener {
         if (meta == null) {
             return;
         }
-        meta.setLore(java.util.List.of(ChatColor.GRAY + "Chance: " + chance + "%"));
+        java.util.List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
+        lore.removeIf(line -> ChatColor.stripColor(line).startsWith("Chance:"));
+        lore.add(ChatColor.GRAY + "Chance: " + chance + "%");
+        meta.setLore(lore);
         meta.getPersistentDataContainer().set(chanceKey, PersistentDataType.INTEGER, chance);
         item.setItemMeta(meta);
     }
@@ -76,6 +79,26 @@ public class SpecialLootMenu implements InventoryHolder, Listener {
         return container.getOrDefault(chanceKey, PersistentDataType.INTEGER, 0);
     }
 
+    private void updateChance(ItemStack item, int delta) {
+        int chance = Math.max(0, Math.min(100, getChance(item) + delta));
+        setChance(item, chance);
+    }
+
+    private ItemStack stripChance(ItemStack item) {
+        ItemStack clone = item.clone();
+        ItemMeta meta = clone.getItemMeta();
+        if (meta != null) {
+            meta.getPersistentDataContainer().remove(chanceKey);
+            if (meta.hasLore()) {
+                java.util.List<String> lore = new ArrayList<>(meta.getLore());
+                lore.removeIf(line -> ChatColor.stripColor(line).startsWith("Chance:"));
+                meta.setLore(lore.isEmpty() ? null : lore);
+            }
+            clone.setItemMeta(meta);
+        }
+        return clone;
+    }
+
     @EventHandler
     public void onClick(InventoryClickEvent event) {
         if (event.getInventory().getHolder() != this) {
@@ -86,14 +109,20 @@ public class SpecialLootMenu implements InventoryHolder, Listener {
             return;
         }
         switch (event.getClick()) {
+            case LEFT -> {
+                updateChance(item, 10);
+                event.setCancelled(true);
+            }
             case RIGHT -> {
-                int chance = Math.min(100, getChance(item) + 1);
-                setChance(item, chance);
+                updateChance(item, -10);
+                event.setCancelled(true);
+            }
+            case SHIFT_LEFT -> {
+                updateChance(item, 1);
                 event.setCancelled(true);
             }
             case SHIFT_RIGHT -> {
-                int chance = Math.max(0, getChance(item) - 1);
-                setChance(item, chance);
+                updateChance(item, -1);
                 event.setCancelled(true);
             }
             default -> {
@@ -107,14 +136,14 @@ public class SpecialLootMenu implements InventoryHolder, Listener {
             return;
         }
         HandlerList.unregisterAll(this);
-        Map<Material, SpecialLootEntry> map = new HashMap<>();
+        List<SpecialLootEntry> list = new ArrayList<>();
         for (ItemStack item : inventory.getContents()) {
             if (item == null || item.getType() == Material.AIR) continue;
             int chance = getChance(item);
-            int amount = item.getAmount();
-            map.put(item.getType(), new SpecialLootEntry(amount, chance));
+            ItemStack clean = stripChance(item);
+            list.add(new SpecialLootEntry(clean, chance));
         }
-        storage.save(schematic, map);
-        manager.setLoot(schematic, map);
+        storage.save(schematic, list);
+        manager.setLoot(schematic, list);
     }
 }

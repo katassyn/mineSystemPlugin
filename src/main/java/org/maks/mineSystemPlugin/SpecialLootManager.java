@@ -1,23 +1,27 @@
 package org.maks.mineSystemPlugin;
 
-import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 /**
  * Holds fixed loot tables per schematic for special zones.
  */
 public class SpecialLootManager {
-    private final Map<String, Map<Material, SpecialLootEntry>> tables = new HashMap<>();
+    private final Map<String, List<SpecialLootEntry>> tables = new HashMap<>();
     private final Random random = new Random();
 
-    public void setLoot(String schematic, Map<Material, SpecialLootEntry> items) {
+    public void setLoot(String schematic, List<SpecialLootEntry> items) {
         tables.put(schematic, items);
     }
 
-    public Map<Material, SpecialLootEntry> getLoot(String schematic) {
+    public List<SpecialLootEntry> getLoot(String schematic) {
         return tables.get(schematic);
     }
 
@@ -25,7 +29,7 @@ public class SpecialLootManager {
      * Fills inventory with items according to configured chances for the given schematic.
      */
     public void fillInventory(String schematic, Inventory inventory) {
-        Map<Material, SpecialLootEntry> items = tables.get(schematic);
+        List<SpecialLootEntry> items = tables.get(schematic);
         if (items == null || items.isEmpty()) {
             return;
         }
@@ -35,13 +39,12 @@ public class SpecialLootManager {
         }
         Collections.shuffle(slots, random);
         int i = 0;
-        for (Map.Entry<Material, SpecialLootEntry> entry : items.entrySet()) {
+        for (SpecialLootEntry entry : items) {
             if (i >= slots.size()) {
                 break;
             }
-            SpecialLootEntry spec = entry.getValue();
-            if (random.nextInt(100) < spec.chance()) {
-                inventory.setItem(slots.get(i), new ItemStack(entry.getKey(), spec.amount()));
+            if (random.nextInt(100) < entry.chance()) {
+                inventory.setItem(slots.get(i), entry.item().clone());
                 i++;
             }
         }

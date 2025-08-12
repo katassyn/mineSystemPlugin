@@ -1,6 +1,8 @@
 package org.maks.mineSystemPlugin.repository;
 
-import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+import org.maks.mineSystemPlugin.LootEntry;
+import org.maks.mineSystemPlugin.ItemSerializer;
 import org.maks.mineSystemPlugin.database.DatabaseManager;
 
 import java.sql.Connection;
@@ -8,8 +10,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -22,35 +24,35 @@ public class LootRepository {
         this.database = database;
     }
 
-    public CompletableFuture<Map<Material, Integer>> load() {
+    public CompletableFuture<List<LootEntry>> load() {
         return CompletableFuture.supplyAsync(() -> {
-            Map<Material, Integer> map = new HashMap<>();
-            String sql = "SELECT material, chance FROM loot_items";
+            List<LootEntry> list = new ArrayList<>();
+            String sql = "SELECT item, chance FROM loot_items";
             try (Connection con = database.getDataSource().getConnection();
                  Statement st = con.createStatement();
                  ResultSet rs = st.executeQuery(sql)) {
                 while (rs.next()) {
-                    Material mat = Material.matchMaterial(rs.getString("material"));
-                    if (mat != null) {
-                        map.put(mat, rs.getInt("chance"));
+                    ItemStack item = ItemSerializer.deserialize(rs.getString("item"));
+                    if (item != null) {
+                        list.add(new LootEntry(item, rs.getInt("chance")));
                     }
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-            return map;
+            return list;
         }, database.getExecutor());
     }
 
-    public CompletableFuture<Void> save(Map<Material, Integer> items) {
+    public CompletableFuture<Void> save(List<LootEntry> items) {
         return CompletableFuture.runAsync(() -> {
             try (Connection con = database.getDataSource().getConnection();
                  Statement st = con.createStatement()) {
                 st.executeUpdate("TRUNCATE TABLE loot_items");
-                try (PreparedStatement ps = con.prepareStatement("INSERT INTO loot_items(material, chance) VALUES(?, ?)")) {
-                    for (Map.Entry<Material, Integer> entry : items.entrySet()) {
-                        ps.setString(1, entry.getKey().name());
-                        ps.setInt(2, entry.getValue());
+                try (PreparedStatement ps = con.prepareStatement("INSERT INTO loot_items(item, chance) VALUES(?, ?)")) {
+                    for (LootEntry entry : items) {
+                        ps.setString(1, ItemSerializer.serialize(entry.item()));
+                        ps.setInt(2, entry.chance());
                         ps.addBatch();
                     }
                     ps.executeBatch();

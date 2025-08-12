@@ -18,13 +18,12 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.maks.mineSystemPlugin.LootEntry;
 import org.maks.mineSystemPlugin.LootManager;
 import org.maks.mineSystemPlugin.repository.LootRepository;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Inventory GUI for editing loot items. Players can add items by
@@ -51,12 +50,12 @@ public class LootEditMenu implements InventoryHolder, Listener {
         this.chanceKey = new NamespacedKey(plugin, "chance");
 
         // Load existing items
-        Map<Material, Integer> items = storage.load().join();
+        List<LootEntry> items = storage.load().join();
         int slot = 0;
-        for (Map.Entry<Material, Integer> e : items.entrySet()) {
+        for (LootEntry e : items) {
             if (slot >= 45) break;
-            ItemStack item = new ItemStack(e.getKey());
-            setChance(item, e.getValue());
+            ItemStack item = e.item().clone();
+            setChance(item, e.chance());
             inventory.setItem(slot++, item);
         }
 
@@ -91,7 +90,8 @@ public class LootEditMenu implements InventoryHolder, Listener {
     private void setChance(ItemStack item, int chance) {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
-        List<String> lore = new ArrayList<>();
+        List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
+        lore.removeIf(line -> ChatColor.stripColor(line).startsWith("Chance:"));
         lore.add(ChatColor.GRAY + "Chance: " + ChatColor.YELLOW + chance + "%");
         meta.setLore(lore);
         meta.getPersistentDataContainer().set(chanceKey, PersistentDataType.INTEGER, chance);
@@ -108,6 +108,21 @@ public class LootEditMenu implements InventoryHolder, Listener {
     private void updateChance(ItemStack item, int delta) {
         int chance = Math.max(0, Math.min(100, getChance(item) + delta));
         setChance(item, chance);
+    }
+
+    private ItemStack stripChance(ItemStack item) {
+        ItemStack clone = item.clone();
+        ItemMeta meta = clone.getItemMeta();
+        if (meta != null) {
+            meta.getPersistentDataContainer().remove(chanceKey);
+            if (meta.hasLore()) {
+                List<String> lore = new ArrayList<>(meta.getLore());
+                lore.removeIf(line -> ChatColor.stripColor(line).startsWith("Chance:"));
+                meta.setLore(lore.isEmpty() ? null : lore);
+            }
+            clone.setItemMeta(meta);
+        }
+        return clone;
     }
 
     @EventHandler
@@ -193,14 +208,16 @@ public class LootEditMenu implements InventoryHolder, Listener {
     }
 
     private void saveChanges() {
-        Map<Material, Integer> map = new HashMap<>();
+        List<LootEntry> list = new ArrayList<>();
         for (int i = 0; i < 45; i++) {
             ItemStack item = inventory.getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
-            map.put(item.getType(), getChance(item));
+            int chance = getChance(item);
+            ItemStack clean = stripChance(item);
+            list.add(new LootEntry(clean, chance));
         }
-        storage.save(map);
-        lootManager.setProbabilities(map);
+        storage.save(list);
+        lootManager.setEntries(list);
     }
 
     @EventHandler

@@ -1,11 +1,18 @@
 package org.maks.mineSystemPlugin.repository;
 
-import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+import org.maks.mineSystemPlugin.ItemSerializer;
 import org.maks.mineSystemPlugin.SpecialLootEntry;
 import org.maks.mineSystemPlugin.database.DatabaseManager;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -19,21 +26,20 @@ public class SpecialLootRepository {
         this.database = database;
     }
 
-    public CompletableFuture<Map<String, Map<Material, SpecialLootEntry>>> loadAll() {
+    public CompletableFuture<Map<String, List<SpecialLootEntry>>> loadAll() {
         return CompletableFuture.supplyAsync(() -> {
-            Map<String, Map<Material, SpecialLootEntry>> result = new HashMap<>();
-            String sql = "SELECT schematic, material, amount, chance FROM special_loot";
+            Map<String, List<SpecialLootEntry>> result = new HashMap<>();
+            String sql = "SELECT schematic, item, chance FROM special_loot";
             try (Connection con = database.getDataSource().getConnection();
                  Statement st = con.createStatement();
                  ResultSet rs = st.executeQuery(sql)) {
                 while (rs.next()) {
                     String schem = rs.getString("schematic");
-                    Material mat = Material.matchMaterial(rs.getString("material"));
-                    int amount = rs.getInt("amount");
+                    ItemStack item = ItemSerializer.deserialize(rs.getString("item"));
                     int chance = rs.getInt("chance");
-                    if (mat == null) continue;
-                    result.computeIfAbsent(schem, k -> new HashMap<>())
-                            .put(mat, new SpecialLootEntry(amount, chance));
+                    if (item == null) continue;
+                    result.computeIfAbsent(schem, k -> new ArrayList<>())
+                            .add(new SpecialLootEntry(item, chance));
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -42,7 +48,7 @@ public class SpecialLootRepository {
         }, database.getExecutor());
     }
 
-    public CompletableFuture<Void> save(String schematic, Map<Material, SpecialLootEntry> items) {
+    public CompletableFuture<Void> save(String schematic, List<SpecialLootEntry> items) {
         return CompletableFuture.runAsync(() -> {
             try (Connection con = database.getDataSource().getConnection()) {
                 try (PreparedStatement del = con.prepareStatement("DELETE FROM special_loot WHERE schematic = ?")) {
@@ -50,12 +56,11 @@ public class SpecialLootRepository {
                     del.executeUpdate();
                 }
                 try (PreparedStatement ps = con.prepareStatement(
-                        "INSERT INTO special_loot(schematic, material, amount, chance) VALUES(?, ?, ?, ?)");) {
-                    for (Map.Entry<Material, SpecialLootEntry> entry : items.entrySet()) {
+                        "INSERT INTO special_loot(schematic, item, chance) VALUES(?, ?, ?)");) {
+                    for (SpecialLootEntry entry : items) {
                         ps.setString(1, schematic);
-                        ps.setString(2, entry.getKey().name());
-                        ps.setInt(3, entry.getValue().amount());
-                        ps.setInt(4, entry.getValue().chance());
+                        ps.setString(2, ItemSerializer.serialize(entry.item()));
+                        ps.setInt(3, entry.chance());
                         ps.addBatch();
                     }
                     ps.executeBatch();

@@ -5,32 +5,32 @@ mobs:
       amount: 3
 
 database:
-  host: localhost
-  port: 3306
-  name: minesystem
-  user: root
-  password: password
+  host: node19.icehost.pl
+  port: 5891
+  name: s61121_minecraft
+  user: u61121_T1tlCaXDAv
+  password: PlwA+z7DQ=cS0R7.ixxCxbhD
 
 sell-prices:
-  world:
-    Hematite: 40.0
-    BlackSpinel: 70.0
-    BlackDiamond: 120.0
-    Magnetite: 50.0
-    Silver: 90.0
-    Osmium: 140.0
-    Azurite: 60.0
-    Tanzanite: 100.0
-    BlueSapphire: 150.0
-    Carnelian: 65.0
-    RedSpinel: 115.0
-    PigeonBloodRuby: 175.0
-    Pyrite: 75.0
-    YellowTopaz: 125.0
-    YellowSapphire: 180.0
-    Malachite: 90.0
-    Peridot: 130.0
-    TropicheEmerald: 200.0
-    Danburite: 100.0
-    Goshenite: 175.0
-    Cerussite: 300.0
+  world: # nazwa �wiata
+    Hematite: 1000000
+    BlackSpinel: 1750000
+    BlackDiamond: 3000000
+    Magnetite: 1250000
+    Silver: 2250000
+    Osmium: 3500000
+    Azurite: 1500000
+    Tanzanite: 2500000
+    BlueSapphire: 3750000
+    Carnelian: 1625000
+    RedSpinel: 2875000
+    PigeonBloodRuby: 4375000
+    Pyrite: 1875000
+    YellowTopaz: 3125000
+    YellowSapphire: 4500000
+    Malachite: 2250000
+    Peridot: 3250000
+    TropicheEmerald: 5000000
+    Danburite: 2500000
+    Goshenite: 4375000
+    Cerussite: 7500000

@@ -401,9 +401,11 @@ public class SphereManager {
         if (task != null) {
             task.cancel();
         }
+        Location finalLoc = loc;
+        HologramData finalData = data;
         hideTasks.put(loc, Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            data.stand().setCustomNameVisible(false);
-            hideTasks.remove(loc);
+            finalData.stand().setCustomNameVisible(false);
+            hideTasks.remove(finalLoc);
         }, 60L));
     }
 

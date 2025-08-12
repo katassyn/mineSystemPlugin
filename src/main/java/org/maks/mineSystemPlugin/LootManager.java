@@ -1,23 +1,25 @@
 package org.maks.mineSystemPlugin;
 
-import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
 /**
  * Handles randomisation logic for loot rolls.
  */
 public class LootManager {
     private final Random random = new Random();
-    private Map<Material, Integer> probabilities = new HashMap<>();
+    private List<LootEntry> entries = new ArrayList<>();
 
     /**
-     * Updates internal probabilities map. Key is item material, value is chance in percent.
+     * Updates internal loot entries.
      */
-    public void setProbabilities(Map<Material, Integer> probabilities) {
-        this.probabilities = probabilities;
+    public void setEntries(List<LootEntry> entries) {
+        this.entries = entries;
     }
 
     // Probability distribution for number of rewards in a chest, index 0 corresponds to count=1
@@ -44,25 +46,25 @@ public class LootManager {
     }
 
     /**
-     * Selects an item material from configured probabilities.
+     * Selects an item from configured probabilities.
      */
-    public Material rollItem() {
-        if (probabilities.isEmpty()) {
+    public ItemStack rollItem() {
+        if (entries.isEmpty()) {
             return null;
         }
-        int total = probabilities.values().stream().mapToInt(Integer::intValue).sum();
+        int total = entries.stream().mapToInt(LootEntry::chance).sum();
         if (total <= 0) {
             return null;
         }
         int r = random.nextInt(total);
         int cumulative = 0;
-        for (Map.Entry<Material, Integer> entry : probabilities.entrySet()) {
-            cumulative += entry.getValue();
+        for (LootEntry entry : entries) {
+            cumulative += entry.chance();
             if (r < cumulative) {
-                return entry.getKey();
+                return entry.item().clone();
             }
         }
-        return probabilities.keySet().iterator().next();
+        return entries.get(0).item().clone();
     }
 
     /**
@@ -77,9 +79,9 @@ public class LootManager {
         }
         Collections.shuffle(slots, random);
         for (int i = 0; i < count && i < slots.size(); i++) {
-            Material material = rollItem();
-            if (material != null) {
-                inventory.setItem(slots.get(i), new ItemStack(material));
+            ItemStack item = rollItem();
+            if (item != null) {
+                inventory.setItem(slots.get(i), item);
             }
         }
     }

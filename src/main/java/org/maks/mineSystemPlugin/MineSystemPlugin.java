@@ -133,7 +133,7 @@ public final class MineSystemPlugin extends JavaPlugin {
         staminaManager = new StaminaManager(this, 100, Duration.ofHours(12), questRepository, playerRepository);
         lootManager = new LootManager();
         lootRepository = new LootRepository(database);
-        lootManager.setProbabilities(lootRepository.load().join());
+        lootManager.setEntries(lootRepository.load().join());
         specialLootManager = new SpecialLootManager();
         specialLootRepository = new SpecialLootRepository(database);
         specialLootRepository.loadAll().join().forEach(specialLootManager::setLoot);

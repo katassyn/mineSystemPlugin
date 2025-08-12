@@ -13,10 +13,6 @@ import org.maks.mineSystemPlugin.events.OreMinedEvent;
 import org.maks.mineSystemPlugin.item.CustomItems;
 import org.maks.mineSystemPlugin.tool.CustomTool;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
-
 /**
  * Handles custom mining logic. Each ore requires a configured number of hits
  * before it breaks. When the threshold is reached an item matching the
@@ -24,11 +20,7 @@ import java.util.Random;
  */
 public class BlockBreakListener implements Listener {
 
-    private static final List<String> BONUS_ITEMS =
-            Arrays.asList("ore_I", "ore_II", "ore_III");
-
     private final MineSystemPlugin plugin;
-    private final Random random = new Random();
 
     public BlockBreakListener(MineSystemPlugin plugin) {
         this.plugin = plugin;
@@ -53,11 +45,7 @@ public class BlockBreakListener implements Listener {
         String oreId = plugin.resolveOreId(block);
         var loc = block.getLocation().toBlockLocation();
         int remaining = plugin.decrementBlockHits(loc, oreId);
-        plugin.getLogger().info(String.format(
-                "Block hit %s (%s) at %d %d %d, remaining=%d", oreType, oreId,
-                block.getX(), block.getY(), block.getZ(), remaining));
-
-        plugin.getSphereManager().updateHologram(loc, remaining);
+        plugin.getSphereManager().updateHologram(loc, oreId, remaining);
 
         event.setCancelled(true);
 
@@ -90,16 +78,9 @@ public class BlockBreakListener implements Listener {
         int pickaxeLevel = CustomTool.getToolLevel(tool);
         Bukkit.getPluginManager().callEvent(new OreMinedEvent(player, oreType, amount, pickaxeLevel));
 
-        int total = plugin.incrementOreCount();
+        int total = plugin.incrementOreCount(player.getUniqueId());
         if (total % 20 == 0) {
-            int bonus = random.nextInt(3) + 1;
-            for (int i = 0; i < bonus; i++) {
-                String rewardId = BONUS_ITEMS.get(random.nextInt(BONUS_ITEMS.size()));
-                ItemStack reward = CustomItems.get(rewardId);
-                if (reward != null) {
-                    block.getWorld().dropItemNaturally(block.getLocation(), reward.clone());
-                }
-            }
+            plugin.dropRandomOreReward(player, block.getLocation());
         }
     }
 }

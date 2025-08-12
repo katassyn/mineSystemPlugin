@@ -7,27 +7,33 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.maks.mineSystemPlugin.item.CustomItems;
+import org.maks.mineSystemPlugin.tool.CustomTool;
 
 import java.util.*;
 
 public class SpecialBlockListener implements Listener {
-    private final Plugin plugin;
+    private final MineSystemPlugin plugin;
     private final Map<Location, Integer> hitMap = new HashMap<>();
     private final Map<Location, ArmorStand> holograms = new HashMap<>();
     private final Map<Location, BukkitTask> hideTasks = new HashMap<>();
     private final Random random = new Random();
 
-    public SpecialBlockListener(Plugin plugin) {
+    public SpecialBlockListener(MineSystemPlugin plugin) {
         this.plugin = plugin;
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
         Material type = block.getType();
+
+        Location loc = block.getLocation();
+        if (!plugin.getSphereManager().isInsideSphere(loc)) {
+            event.setCancelled(true);
+            return;
+        }
 
         int requiredHits;
         int interval;
@@ -38,8 +44,6 @@ public class SpecialBlockListener implements Listener {
             case AMETHYST_BLOCK -> { requiredHits = 25; interval = 5; display = "Crystals"; }
             default -> { return; }
         }
-
-        Location loc = block.getLocation();
         int hits = hitMap.getOrDefault(loc, 0) + 1;
         int remaining = requiredHits - hits;
         hitMap.put(loc, hits);

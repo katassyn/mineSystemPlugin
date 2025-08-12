@@ -91,6 +91,23 @@ public class StaminaManager {
         return getData(uuid).getStamina();
     }
 
+    public int getMaxStamina(UUID uuid) {
+        return getData(uuid).getMaxStamina();
+    }
+
+    public Duration getTimeUntilReset(UUID uuid) {
+        PlayerStamina ps = getData(uuid);
+        if (ps.getFirstUsage() == null) {
+            return Duration.ZERO;
+        }
+        Instant resetTime = ps.getFirstUsage().plus(resetAfter);
+        Instant now = Instant.now();
+        if (now.isAfter(resetTime)) {
+            return Duration.ZERO;
+        }
+        return Duration.between(now, resetTime);
+    }
+
     public boolean hasStamina(UUID uuid, int amount) {
         return getStamina(uuid) >= amount;
     }

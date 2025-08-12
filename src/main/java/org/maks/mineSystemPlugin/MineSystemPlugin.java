@@ -245,5 +245,20 @@ public final class MineSystemPlugin extends JavaPlugin {
         oreCount++;
         return oreCount;
     }
+
+    /**
+     * Registers a specific ore variant for a block when a sphere is pasted.
+     * This ensures that subsequent hits use the pre-selected ore type instead of
+     * rolling a new random variant on first break.
+     *
+     * @param location block location inside the sphere
+     * @param oreId    internal ore identifier (e.g. "BlackSpinel")
+     */
+    public void registerOre(Location location, String oreId) {
+        blockOreTypes.put(location, oreId);
+        blockHits.remove(location);
+        getLogger().info(String.format("Registered ore %s at %d %d %d", oreId,
+                location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+    }
 }
 

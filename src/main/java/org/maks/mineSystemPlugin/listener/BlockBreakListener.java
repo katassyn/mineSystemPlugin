@@ -52,6 +52,9 @@ public class BlockBreakListener implements Listener {
 
         String oreId = plugin.resolveOreId(block);
         int remaining = plugin.decrementBlockHits(block.getLocation(), oreId);
+        plugin.getLogger().info(String.format(
+                "Block hit %s (%s) at %d %d %d, remaining=%d", oreType, oreId,
+                block.getX(), block.getY(), block.getZ(), remaining));
 
         plugin.getSphereManager().updateHologram(block.getLocation(), remaining);
 

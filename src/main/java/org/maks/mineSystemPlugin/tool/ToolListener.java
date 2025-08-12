@@ -38,14 +38,12 @@ public class ToolListener implements Listener {
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
         ItemStack tool = player.getInventory().getItemInMainHand();
-        if (tool.getType() == Material.AIR || !tool.hasItemMeta()) {
-            return;
-        }
 
         boolean wasCancelled = event.isCancelled();
         Block block = event.getBlock();
         boolean insideSphere = plugin.getSphereManager().isInsideSphere(block.getLocation());
         boolean bypass = player.isOp() || player.hasPermission("minesystem.admin");
+        boolean pluginTool = canDestroy(tool, block);
 
         if (debug) {
             plugin.getLogger().info(String.format(
@@ -57,28 +55,31 @@ public class ToolListener implements Listener {
         }
 
         // restrict breaking inside spheres unless allowed
-        if (insideSphere && !bypass && !canDestroy(tool, block)) {
+        if (insideSphere && !bypass && !pluginTool) {
             event.setCancelled(true);
             if (debug) {
                 plugin.getLogger().info("[ToolListener] Cancelled: block not allowed inside sphere");
             }
+            return;
+        }
+
+        if (!pluginTool) {
+            return;
         }
 
         // duplicate drops
-        if (!event.isCancelled()) {
-            int dupLevel = CustomTool.getDuplicateLevel(tool, plugin);
-            if (dupLevel > 0) {
-                double chance = switch (dupLevel) {
-                    case 1 -> 0.03;
-                    case 2 -> 0.04;
-                    case 3 -> 0.05;
-                    default -> 0.0;
-                };
-                if (Math.random() < chance) {
-                    Collection<ItemStack> drops = event.getBlock().getDrops(tool, player);
-                    for (ItemStack drop : drops) {
-                        event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), drop);
-                    }
+        int dupLevel = CustomTool.getDuplicateLevel(tool, plugin);
+        if (dupLevel > 0) {
+            double chance = switch (dupLevel) {
+                case 1 -> 0.03;
+                case 2 -> 0.04;
+                case 3 -> 0.05;
+                default -> 0.0;
+            };
+            if (Math.random() < chance) {
+                Collection<ItemStack> drops = event.getBlock().getDrops(tool, player);
+                for (ItemStack drop : drops) {
+                    event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), drop);
                 }
             }
         }
@@ -99,7 +100,8 @@ public class ToolListener implements Listener {
     }
 
     private boolean canDestroy(ItemStack tool, Block block) {
-        if (!tool.hasItemMeta()) {
+        if (tool.getType() == Material.AIR || !tool.hasItemMeta()) {
+
             return false;
         }
         ItemMeta meta = tool.getItemMeta();

@@ -322,7 +322,7 @@ public class SphereManager {
         for (Map.Entry<BlockVector3, OreVariant> entry : variants.entrySet()) {
             BlockVector3 vec = entry.getKey().add(shift);
             OreVariant data = entry.getValue();
-            Location blockLoc = new Location(world, vec.getX(), vec.getY(), vec.getZ());
+            Location blockLoc = new Location(world, vec.getX(), vec.getY(), vec.getZ()).toBlockLocation();
             String display = addSpaces(data.name());
             ArmorStand stand = world.spawn(blockLoc.clone().add(0.5, 1.2, 0.5), ArmorStand.class, as -> {
                 as.setInvisible(true);
@@ -375,6 +375,7 @@ public class SphereManager {
     }
 
     public void updateHologram(Location loc, int remaining) {
+        loc = loc.toBlockLocation();
         HologramData data = holograms.get(loc);
         if (data == null) {
             return;
@@ -456,6 +457,10 @@ public class SphereManager {
 
     public void removeSphere(Player player) {
         removeSphere(player.getUniqueId(), player);
+    }
+
+    public void removeSphereOnDeath(Player player) {
+        removeSphere(player.getUniqueId(), null);
     }
 
     private void removeSphere(UUID uuid, Player player) {

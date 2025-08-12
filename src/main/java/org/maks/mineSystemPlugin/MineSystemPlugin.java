@@ -217,7 +217,8 @@ public final class MineSystemPlugin extends JavaPlugin {
     }
 
     public String resolveOreId(Block block) {
-        return blockOreTypes.computeIfAbsent(block.getLocation(), loc -> randomOreFor(block.getType()));
+        Location loc = block.getLocation().toBlockLocation();
+        return blockOreTypes.computeIfAbsent(loc, l -> randomOreFor(block.getType()));
     }
 
     private String randomOreFor(Material material) {
@@ -230,6 +231,7 @@ public final class MineSystemPlugin extends JavaPlugin {
     }
 
     public int decrementBlockHits(Location location, String oreId) {
+        location = location.toBlockLocation();
         int required = ORE_DURABILITY.getOrDefault(oreId, 1);
         int hits = blockHits.getOrDefault(location, 0) + 1;
         if (hits >= required) {
@@ -255,10 +257,11 @@ public final class MineSystemPlugin extends JavaPlugin {
      * @param oreId    internal ore identifier (e.g. "BlackSpinel")
      */
     public void registerOre(Location location, String oreId) {
-        blockOreTypes.put(location, oreId);
-        blockHits.remove(location);
+        Location loc = location.toBlockLocation();
+        blockOreTypes.put(loc, oreId);
+        blockHits.remove(loc);
         getLogger().info(String.format("Registered ore %s at %d %d %d", oreId,
-                location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+                loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
 
     }
 }

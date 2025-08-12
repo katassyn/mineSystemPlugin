@@ -76,6 +76,11 @@ public class SpecialLootMenu implements InventoryHolder, Listener {
         return container.getOrDefault(chanceKey, PersistentDataType.INTEGER, 0);
     }
 
+    private void updateChance(ItemStack item, int delta) {
+        int chance = Math.max(0, Math.min(100, getChance(item) + delta));
+        setChance(item, chance);
+    }
+
     @EventHandler
     public void onClick(InventoryClickEvent event) {
         if (event.getInventory().getHolder() != this) {
@@ -86,14 +91,20 @@ public class SpecialLootMenu implements InventoryHolder, Listener {
             return;
         }
         switch (event.getClick()) {
+            case LEFT -> {
+                updateChance(item, 10);
+                event.setCancelled(true);
+            }
             case RIGHT -> {
-                int chance = Math.min(100, getChance(item) + 1);
-                setChance(item, chance);
+                updateChance(item, -10);
+                event.setCancelled(true);
+            }
+            case SHIFT_LEFT -> {
+                updateChance(item, 1);
                 event.setCancelled(true);
             }
             case SHIFT_RIGHT -> {
-                int chance = Math.max(0, getChance(item) - 1);
-                setChance(item, chance);
+                updateChance(item, -1);
                 event.setCancelled(true);
             }
             default -> {

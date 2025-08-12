@@ -32,3 +32,7 @@ commands:
     description: Check your stamina
     usage: /stamin
     permission: minesystemplugin.mine
+permissions:
+  minesystem.admin:
+    description: Bypass mining restrictions
+    default: op

@@ -83,6 +83,16 @@ public final class MineSystemPlugin extends JavaPlugin {
             Map.entry("Cerussite", 300)
     );
 
+    /**
+     * Returns the configured durability for a given ore identifier.
+     *
+     * @param oreId internal ore name
+     * @return number of required hits before the ore breaks
+     */
+    public int getOreDurability(String oreId) {
+        return ORE_DURABILITY.getOrDefault(oreId, 1);
+    }
+
     private static final Map<Material, List<String>> ORE_ITEM_MAP = Map.of(
             Material.COAL_ORE, List.of("Hematite", "BlackSpinel", "BlackDiamond"),
             Material.IRON_ORE, List.of("Magnetite", "Silver", "Osmium"),

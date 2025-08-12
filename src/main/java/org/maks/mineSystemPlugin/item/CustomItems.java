@@ -125,6 +125,10 @@ public final class CustomItems {
         // Currency
         register("Crystal", Material.BRICK, "&d&lCrystal",
                 List.of("§o&7Mine currency"), true, true);
+
+        // Consumables
+        register("miner_elixir", Material.RAW_BEEF, "&5Miner Elixir",
+                List.of("&7Refresh Mining Stamin"), true, true);
     }
 
     private static void register(String id, Material material, String name,

@@ -19,12 +19,18 @@ import org.maks.mineSystemPlugin.MineSystemPlugin;
 public class ToolListener implements Listener {
 
     private final MineSystemPlugin plugin;
+    private final boolean debug;
 
     public ToolListener(MineSystemPlugin plugin) {
         this.plugin = plugin;
+        this.debug = plugin.getConfig().getBoolean("debug.toolListener", false);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    /**
+     * Runs at HIGH priority so cancellations from this listener are respected
+     * before the monitor phase, but after most game logic.
+     */
+    @EventHandler(priority = EventPriority.HIGH)
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
         ItemStack tool = player.getInventory().getItemInMainHand();
@@ -32,18 +38,30 @@ public class ToolListener implements Listener {
             return;
         }
 
-        if (!event.isCancelled()) {
-            Block block = event.getBlock();
-            boolean insideSphere = plugin.getSphereManager().isInsideSphere(block.getLocation());
-            boolean bypass = player.isOp() || player.hasPermission("minesystem.admin");
+        boolean wasCancelled = event.isCancelled();
+        Block block = event.getBlock();
+        boolean insideSphere = plugin.getSphereManager().isInsideSphere(block.getLocation());
+        boolean bypass = player.isOp() || player.hasPermission("minesystem.admin");
 
-            // restrict breaking inside spheres unless allowed
-            if (insideSphere && !bypass && !canDestroy(tool, block)) {
-                event.setCancelled(true);
-                return;
+        if (debug) {
+            plugin.getLogger().info(String.format(
+                "[ToolListener] %s tried to break %s at %s (initially cancelled=%s)",
+                player.getName(), block.getType(), block.getLocation(), wasCancelled));
+            if (wasCancelled) {
+                plugin.getLogger().info("[ToolListener] Event was already cancelled before processing");
             }
+        }
 
-            // duplicate drops
+        // restrict breaking inside spheres unless allowed
+        if (insideSphere && !bypass && !canDestroy(tool, block)) {
+            event.setCancelled(true);
+            if (debug) {
+                plugin.getLogger().info("[ToolListener] Cancelled: block not allowed inside sphere");
+            }
+        }
+
+        // duplicate drops
+        if (!event.isCancelled()) {
             int dupLevel = CustomTool.getDuplicateLevel(tool, plugin);
             if (dupLevel > 0) {
                 double chance = switch (dupLevel) {
@@ -69,6 +87,9 @@ public class ToolListener implements Listener {
             player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
         } else {
             player.getInventory().setItemInMainHand(tool);
+        }
+        if (debug) {
+            plugin.getLogger().info("[ToolListener] Final state: " + (event.isCancelled() ? "cancelled" : "allowed"));
         }
         player.updateInventory();
     }

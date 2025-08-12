@@ -122,6 +122,16 @@ public class StaminaManager {
         playerRepository.save(new PlayerData(uuid, ps.getStamina(), reset));
     }
 
+    /**
+     * Restores a player's stamina to its maximum and clears any active reset timer.
+     */
+    public void refillStamina(UUID uuid) {
+        PlayerStamina ps = getData(uuid);
+        ps.setStamina(ps.getMaxStamina());
+        ps.setFirstUsage(null);
+        playerRepository.save(new PlayerData(uuid, ps.getStamina(), 0L));
+    }
+
     public void saveAll() {
         staminaMap.forEach((uuid, ps) -> {
             long reset = ps.getFirstUsage() == null ? 0L : ps.getFirstUsage().toEpochMilli();

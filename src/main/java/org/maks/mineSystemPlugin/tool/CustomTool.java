@@ -58,6 +58,8 @@ public final class CustomTool {
         NamespacedKey curKey = new NamespacedKey(plugin, "durability");
         pdc.set(maxKey, PersistentDataType.INTEGER, material.getMaxDurability());
         pdc.set(curKey, PersistentDataType.INTEGER, material.getMaxDurability());
+        NamespacedKey markerKey = new NamespacedKey(plugin, "custom_tool");
+        pdc.set(markerKey, PersistentDataType.BYTE, (byte) 1);
 
         // allowed blocks restriction
         if (canDestroy != null && !canDestroy.isEmpty()) {

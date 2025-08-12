@@ -44,7 +44,6 @@ public class BlockBreakListener implements Listener {
             return;
         }
 
-
         ItemStack tool = player.getInventory().getItemInMainHand();
         Material oreType = block.getType();
 

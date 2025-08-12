@@ -29,15 +29,16 @@ public class SpecialBlockListener implements Listener {
     public void onBlockBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
         Material type = block.getType();
-
-        Player player = event.getPlayer();
-        boolean bypass = player.isOp() || player.hasPermission("minesystem.admin");
-
         Location loc = block.getLocation();
-        if (!bypass && !plugin.getSphereManager().isInsideSphere(loc)) {
-            event.setCancelled(true);
+
+        // Outside mining spheres the plugin should not interfere –
+        // let the block break normally without any custom handling.
+        if (!plugin.getSphereManager().isInsideSphere(loc)) {
+
             return;
         }
+
+        Player player = event.getPlayer();
 
         int requiredHits;
         int interval;
@@ -78,7 +79,6 @@ public class SpecialBlockListener implements Listener {
         World world = block.getWorld();
 
         // handle duplication enchant
-        Player player = event.getPlayer();
         ItemStack tool = player.getInventory().getItemInMainHand();
         int dupLevel = CustomTool.getDuplicateLevel(tool, plugin);
         double chance = switch (dupLevel) {

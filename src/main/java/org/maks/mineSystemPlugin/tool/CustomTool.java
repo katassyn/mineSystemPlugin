@@ -69,6 +69,51 @@ public final class CustomTool {
     }
 
     /**
+     * Ensures the given item has durability metadata and lore initialised. This
+     * allows tools obtained from configuration to participate in the custom
+     * durability system even if they lacked persistent data.
+     */
+    public static void ensureDurability(ItemStack item, Plugin plugin) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        NamespacedKey maxKey = new NamespacedKey(plugin, "max_durability");
+        NamespacedKey curKey = new NamespacedKey(plugin, "durability");
+        Integer max = pdc.get(maxKey, PersistentDataType.INTEGER);
+        Integer cur = pdc.get(curKey, PersistentDataType.INTEGER);
+        if (max != null && cur != null) {
+            return; // already initialised
+        }
+
+        ToolMaterial material = ToolMaterial.fromMaterial(item.getType());
+        if (material == null) return;
+        int value = material.getMaxDurability();
+        pdc.set(maxKey, PersistentDataType.INTEGER, value);
+        pdc.set(curKey, PersistentDataType.INTEGER, value);
+
+        List<String> lore = meta.getLore();
+        if (lore == null) lore = new ArrayList<>();
+        int index = findDurabilityIndex(lore);
+        String formatted = formatDurability(value, value);
+        if (index == -1) {
+            lore.add(formatted);
+        } else {
+            lore.set(index, formatted);
+        }
+        meta.setLore(lore);
+
+        // preserve CanDestroy values when reapplying meta
+        var canDestroy = meta.getCanDestroy();
+        if (canDestroy != null && !canDestroy.isEmpty()) {
+            meta.setCanDestroy(new HashSet<>(canDestroy));
+        }
+
+        item.setItemMeta(meta);
+        plugin.getLogger().info(String.format("Initialised durability for %s to %d", item.getType(), value));
+    }
+
+    /**
      * Adds the vanilla DIG_SPEED enchantment using a custom name and refreshes the
      * lore so it matches the pattern defined in {@code itemy.md}.
      */

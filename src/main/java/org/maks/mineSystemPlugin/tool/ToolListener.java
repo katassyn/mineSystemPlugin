@@ -60,6 +60,8 @@ public class ToolListener implements Listener {
         }
 
         // durability handling
+        CustomTool.ensureDurability(tool, plugin);
+
         int before = readDurability(tool);
         plugin.getLogger().info(String.format("Tool %s durability before: %d (unbreakable=%s)",
                 tool.getType(), before, tool.getItemMeta().isUnbreakable()));

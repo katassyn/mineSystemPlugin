@@ -34,6 +34,7 @@ public class SpecialBlockListener implements Listener {
         // Outside mining spheres the plugin should not interfere –
         // let the block break normally without any custom handling.
         if (!plugin.getSphereManager().isInsideSphere(loc)) {
+
             return;
         }
 

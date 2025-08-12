@@ -2,6 +2,7 @@ package org.maks.mineSystemPlugin.sphere;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 /**
@@ -18,5 +19,12 @@ public class SphereListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         manager.onPlayerQuit(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onDeath(PlayerDeathEvent event) {
+        if (manager.isInsideSphere(event.getEntity().getLocation())) {
+            manager.removeSphereOnDeath(event.getEntity());
+        }
     }
 }

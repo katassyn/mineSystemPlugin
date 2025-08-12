@@ -33,12 +33,17 @@ public class BlockBreakListener implements Listener {
             return;
         }
 
-        if (!plugin.getSphereManager().isInsideSphere(block.getLocation())) {
-            event.setCancelled(true);
+        if (plugin.consumePlayerPlaced(block.getLocation())) {
             return;
         }
 
         Player player = event.getPlayer();
+        boolean bypass = player.isOp() || player.hasPermission("minesystem.admin");
+        if (!bypass && !plugin.getSphereManager().isInsideSphere(block.getLocation())) {
+            event.setCancelled(true);
+            return;
+        }
+
         ItemStack tool = player.getInventory().getItemInMainHand();
         Material oreType = block.getType();
 
@@ -49,6 +54,11 @@ public class BlockBreakListener implements Listener {
         plugin.getSphereManager().updateHologram(loc, oreId, remaining);
 
         event.setCancelled(true);
+
+        int total = plugin.incrementOreCount(player.getUniqueId());
+        if (total % 20 == 0) {
+            plugin.dropRandomOreReward(player, block.getLocation());
+        }
 
         if (remaining > 0) {
             return;
@@ -78,11 +88,5 @@ public class BlockBreakListener implements Listener {
         int amount = drop == null ? 0 : (duplicate ? drop.getAmount() * 2 : drop.getAmount());
         int pickaxeLevel = CustomTool.getToolLevel(tool);
         Bukkit.getPluginManager().callEvent(new OreMinedEvent(player, oreType, amount, pickaxeLevel));
-
-        int total = plugin.incrementOreCount(player.getUniqueId());
-        if (total % 20 == 0) {
-            plugin.dropRandomOreReward(player, block.getLocation());
-
-        }
     }
 }

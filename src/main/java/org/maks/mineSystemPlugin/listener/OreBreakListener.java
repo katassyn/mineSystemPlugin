@@ -56,6 +56,7 @@ public class OreBreakListener implements Listener {
         int total = plugin.incrementOreCount(player.getUniqueId());
         if (total % 20 == 0) {
             plugin.dropRandomOreReward(player, block.getLocation());
+
         }
     }
 }

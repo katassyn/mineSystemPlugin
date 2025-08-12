@@ -40,6 +40,7 @@ public class StaminaCommand implements CommandExecutor {
             player.sendMessage(ChatColor.YELLOW + "Stamina is full.");
         }
         player.sendMessage(ChatColor.GRAY + "-------------------");
+
         return true;
     }
 }

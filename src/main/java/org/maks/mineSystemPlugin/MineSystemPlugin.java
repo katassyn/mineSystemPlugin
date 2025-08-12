@@ -274,6 +274,7 @@ public final class MineSystemPlugin extends JavaPlugin {
     }
 
     public void dropRandomOreReward(Player player, Location loc) {
+
         int bonus = random.nextInt(3) + 1;
         for (int i = 0; i < bonus; i++) {
             String rewardId = BONUS_ITEMS.get(random.nextInt(BONUS_ITEMS.size()));
@@ -290,6 +291,7 @@ public final class MineSystemPlugin extends JavaPlugin {
 
     public void handleSphereEnd(Player player) {
         dropRandomOreReward(player);
+
         resetOreCount(player.getUniqueId());
     }
 

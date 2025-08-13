@@ -573,9 +573,29 @@ public class SphereManager {
             Block block = world.getBlockAt(x, y, z);
             Block above = world.getBlockAt(x, y + 1, z);
             Block below = world.getBlockAt(x, y - 1, z);
-            Block twoAbove = world.getBlockAt(x, y + 2, z);
-            if (block.getType() == Material.AIR && above.getType() == Material.AIR && below.getType().isSolid()
-                    && twoAbove.getType().isSolid()) {
+            if (block.getType() == Material.AIR && above.getType() == Material.AIR && below.getType().isSolid()) {
+                return new Location(world, x + 0.5, y, z + 0.5);
+            }
+        }
+
+        int minX = region.getMinimumPoint().getBlockX();
+        int maxX = region.getMaximumPoint().getBlockX();
+        int minY = region.getMinimumPoint().getBlockY();
+        int maxY = region.getMaximumPoint().getBlockY();
+        int minZ = region.getMinimumPoint().getBlockZ();
+        int maxZ = region.getMaximumPoint().getBlockZ();
+
+        for (int i = 0; i < 80; i++) {
+            int x = random.nextInt(maxX - minX + 1) + minX;
+            int y = random.nextInt(maxY - minY + 1) + minY;
+            int z = random.nextInt(maxZ - minZ + 1) + minZ;
+            if (!region.contains(BlockVector3.at(x, y, z))) {
+                continue;
+            }
+            Block block = world.getBlockAt(x, y, z);
+            Block above = world.getBlockAt(x, y + 1, z);
+            Block below = world.getBlockAt(x, y - 1, z);
+            if (block.getType() == Material.AIR && above.getType() == Material.AIR && below.getType().isSolid()) {
                 return new Location(world, x + 0.5, y, z + 0.5);
             }
         }

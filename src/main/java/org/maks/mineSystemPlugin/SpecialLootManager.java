@@ -33,6 +33,9 @@ public class SpecialLootManager {
         if (items == null || items.isEmpty()) {
             return;
         }
+        int total = items.stream().mapToInt(SpecialLootEntry::chance).sum();
+        double scale = total > 100 ? 100.0 / total : 1.0;
+
         List<Integer> slots = new ArrayList<>();
         for (int i = 0; i < inventory.getSize(); i++) {
             slots.add(i);
@@ -43,7 +46,8 @@ public class SpecialLootManager {
             if (i >= slots.size()) {
                 break;
             }
-            if (random.nextInt(100) < entry.chance()) {
+            double effective = entry.chance() * scale;
+            if (random.nextDouble() * 100 < effective) {
                 inventory.setItem(slots.get(i), entry.item().clone());
                 i++;
             }

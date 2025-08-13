@@ -118,6 +118,9 @@ loot for a schematic. Both edit commands open a 54‑slot inventory:
 - Use the green **Save** wool to persist changes to the database or red **Cancel**
   to discard.
 - Special loot menus also save automatically when closed.
+- If the combined chances go over 100 %, they are automatically scaled so their
+  proportions remain the same while the total equals 100 %.
+
 
 ## Stamina system
 Players consume stamina when entering spheres. Stamina regenerates after a delay

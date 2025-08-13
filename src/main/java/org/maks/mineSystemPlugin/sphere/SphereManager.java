@@ -31,6 +31,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.configuration.ConfigurationSection;
 import org.maks.mineSystemPlugin.events.SphereCompleteEvent;
 import org.maks.mineSystemPlugin.LootManager;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
@@ -528,6 +529,7 @@ public class SphereManager {
             }
         }
         plugin.getLogger().info("[SphereManager] Found " + entries.size() + " mob entries");
+
         for (Map<?, ?> entry : entries) {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) entry;

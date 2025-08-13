@@ -284,8 +284,10 @@ public class SphereManager {
                         String worldName = origin.getWorld().getName();
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "npc select " + selectId);
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "npc copy");
-                        String cmd = String.format("npc tp %s %.1f %.1f %.1f", worldName,
-                                npcLoc.getX(), npcLoc.getY(), npcLoc.getZ());
+                        String cmd = String.format(
+                                "npc moveto --world %s --x %.1f --y %.1f --z %.1f",
+                                worldName, npcLoc.getX(), npcLoc.getY(), npcLoc.getZ());
+
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
                     }, 60L);
                 }

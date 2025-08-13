@@ -539,9 +539,7 @@ public class SphereManager {
             String mythic = (String) map.get("mythic_id");
             Number amtNum = (Number) map.getOrDefault("amount", 1);
             int amount = amtNum.intValue();
-            Object bossObj = map.get("boss");
-            boolean boss = bossObj != null && Boolean.parseBoolean(String.valueOf(bossObj));
-
+            boolean boss = Boolean.TRUE.equals(map.get("boss"));
             plugin.getLogger().info("[SphereManager] Spawning " + amount + " of " + mythic + (boss ? " (boss)" : ""));
             for (int i = 0; i < amount; i++) {
                 Location loc;
@@ -550,8 +548,7 @@ public class SphereManager {
                         plugin.getLogger().warning("[SphereManager] Boss location missing, skipping spawn of " + mythic);
                         continue;
                     }
-                    if (!isValidSpawnLocation(world, bossLoc.getBlockX(), bossLoc.getBlockY(), bossLoc.getBlockZ(), null)) {
-
+                    if (!isValidSpawnLocation(world, bossLoc.getBlockX(), bossLoc.getBlockY(), bossLoc.getBlockZ(), player)) {
                         plugin.getLogger().warning("[SphereManager] Boss location blocked, skipping spawn of " + mythic);
                         continue;
                     }
@@ -597,52 +594,6 @@ public class SphereManager {
                 return false;
             }
         }
-        if (player != null) {
-            Location eye = player.getEyeLocation();
-            Location target = new Location(world, x + 0.5, y, z + 0.5);
-            Vector dir = target.toVector().subtract(eye.toVector());
-            if (world.rayTraceBlocks(eye, dir.normalize(), dir.length(), FluidCollisionMode.NEVER, true) != null) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private Location findSpawnInColumn(int x, int z, Region region, World world, Player player) {
-        int minY = region.getMinimumPoint().getBlockY();
-        int maxY = region.getMaximumPoint().getBlockY();
-        for (int y = maxY; y >= minY; y--) {
-            if (!region.contains(BlockVector3.at(x, y, z))) {
-                continue;
-            }
-            if (isValidSpawnLocation(world, x, y, z, player)) {
-                return new Location(world, x + 0.5, y, z + 0.5);
-            }
-        }
-        return null;
-    }
-
-    private boolean isValidSpawnLocation(World world, int x, int y, int z, Player player) {
-        Block block = world.getBlockAt(x, y, z);
-        if (block.getType() != Material.AIR) {
-            return false;
-        }
-        Block below = world.getBlockAt(x, y - 1, z);
-        if (!below.getType().isSolid()) {
-            return false;
-        }
-        Block above = world.getBlockAt(x, y + 1, z);
-        if (above.getType() != Material.STONE_BRICKS) {
-            for (int i = 1; i <= 6; i++) {
-                if (world.getBlockAt(x, y + i, z).getType() != Material.AIR) {
-                    return false;
-
-                }
-            }
-            if (world.getBlockAt(x, y + 7, z).getType() == Material.AIR) {
-                return false;
-            }
-        }
         Location eye = player.getEyeLocation();
         Location target = new Location(world, x + 0.5, y, z + 0.5);
         Vector dir = target.toVector().subtract(eye.toVector());
@@ -661,26 +612,33 @@ public class SphereManager {
             Vector offset = new Vector(Math.cos(angle), 0, Math.sin(angle)).multiply(dist);
             int x = base.getBlockX() + (int) Math.round(offset.getX());
             int z = base.getBlockZ() + (int) Math.round(offset.getZ());
-            Location loc = findSpawnInColumn(x, z, region, world, player);
-            if (loc != null) {
-                return loc;
+            int y = base.getBlockY();
+            if (!region.contains(BlockVector3.at(x, y, z))) {
+                continue;
             }
+            if (isValidSpawnLocation(world, x, y, z, player)) {
 
+                return new Location(world, x + 0.5, y, z + 0.5);
+            }
         }
 
         int minX = region.getMinimumPoint().getBlockX();
         int maxX = region.getMaximumPoint().getBlockX();
-
+        int minY = region.getMinimumPoint().getBlockY();
+        int maxY = region.getMaximumPoint().getBlockY();
         int minZ = region.getMinimumPoint().getBlockZ();
         int maxZ = region.getMaximumPoint().getBlockZ();
 
         for (int i = 0; i < 80; i++) {
             int x = random.nextInt(maxX - minX + 1) + minX;
+            int y = random.nextInt(maxY - minY + 1) + minY;
             int z = random.nextInt(maxZ - minZ + 1) + minZ;
-            Location loc = findSpawnInColumn(x, z, region, world, player);
-            if (loc != null) {
-                return loc;
+            if (!region.contains(BlockVector3.at(x, y, z))) {
+                continue;
+            }
+            if (isValidSpawnLocation(world, x, y, z, player)) {
 
+                return new Location(world, x + 0.5, y, z + 0.5);
             }
         }
         return null;

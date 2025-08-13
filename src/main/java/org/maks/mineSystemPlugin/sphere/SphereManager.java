@@ -252,6 +252,7 @@ public class SphereManager {
             BlockVector3 goldVec = findGoldBlock(clipboard);
             BlockVector3 diamondVec = findDiamondBlock(clipboard);
 
+
             loadRegionChunks(origin.getWorld(), region);
 
             try (EditSession editSession = WorldEdit.getInstance()
@@ -323,6 +324,7 @@ public class SphereManager {
                         String cmd = String.format(
                                 "npc moveto --world %s --x %.1f --y %.1f --z %.1f",
                                 worldName, npcLoc.getX(), npcLoc.getY(), npcLoc.getZ());
+
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
                     }, 60L);
                 }

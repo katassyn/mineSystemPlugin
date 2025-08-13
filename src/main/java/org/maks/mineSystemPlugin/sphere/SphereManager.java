@@ -25,9 +25,11 @@ import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.util.Vector;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.maks.mineSystemPlugin.events.SphereCompleteEvent;
@@ -252,6 +254,9 @@ public class SphereManager {
             Map<BlockVector3, OreVariant> variants = replacePlaceholders(clipboard, premium);
             BlockVector3 goldVec = findGoldBlock(clipboard);
             BlockVector3 diamondVec = findDiamondBlock(clipboard);
+            if (diamondVec == null) {
+                plugin.getLogger().warning("[SphereManager] Diamond block not found in schematic; boss will not spawn");
+            }
 
 
             loadRegionChunks(origin.getWorld(), region);
@@ -305,10 +310,6 @@ public class SphereManager {
             } else {
                 teleport = origin.clone().add(0.5, 1, 0.5);
             }
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                player.teleport(teleport);
-                handleMove(player, teleport);
-            }, 40L);
             Location bossLoc = null;
             if (diamondVec != null) {
                 BlockVector3 d = diamondVec.add(shift);
@@ -317,9 +318,14 @@ public class SphereManager {
             Location finalBossLoc = bossLoc;
             Region finalRegion = region;
             Location finalOrigin = origin;
-            Bukkit.getScheduler().runTaskLater(plugin,
-                    () -> spawnConfiguredMobs(schematic.getName(), finalRegion, finalOrigin.getWorld(),
-                            player, finalBossLoc), 20L);
+            String schemName = schematic.getName();
+            plugin.getLogger().info("[SphereManager] Scheduling teleport and mob spawn for " + schemName);
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                player.teleport(teleport);
+                handleMove(player, teleport);
+                plugin.getLogger().info("[SphereManager] Running mob spawn for " + schemName);
+                spawnConfiguredMobs(schemName, finalRegion, finalOrigin.getWorld(), player, finalBossLoc);
+            }, 40L);
 
             if (schematic.getName().equals("special1.schem") || schematic.getName().equals("special2.schem")) {
                 int selectId = schematic.getName().equals("special1.schem") ? 61 : 62;
@@ -509,7 +515,21 @@ public class SphereManager {
 
     private void spawnConfiguredMobs(String schematic, Region region, World world,
                                      Player player, Location bossLoc) {
-        List<Map<?, ?>> entries = ((JavaPlugin) plugin).getConfig().getMapList("mobs." + schematic);
+        String key = "mobs." + schematic.replace(".", "\\.");
+        plugin.getLogger().info("[SphereManager] Loading mob config at key: " + key);
+        List<Map<?, ?>> entries = ((JavaPlugin) plugin).getConfig().getMapList(key);
+        if (entries.isEmpty()) {
+            plugin.getLogger().warning("[SphereManager] No entries found via getMapList, attempting fallback");
+            ConfigurationSection section = ((JavaPlugin) plugin).getConfig().getConfigurationSection("mobs");
+            if (section != null) {
+                Object raw = section.get(schematic);
+                if (raw instanceof List<?>) {
+                    //noinspection unchecked
+                    entries = (List<Map<?, ?>>) raw;
+                }
+            }
+        }
+        plugin.getLogger().info("[SphereManager] Found " + entries.size() + " mob entries");
         for (Map<?, ?> entry : entries) {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) entry;
@@ -517,38 +537,99 @@ public class SphereManager {
             Number amtNum = (Number) map.getOrDefault("amount", 1);
             int amount = amtNum.intValue();
             boolean boss = Boolean.TRUE.equals(map.get("boss"));
+            plugin.getLogger().info("[SphereManager] Spawning " + amount + " of " + mythic + (boss ? " (boss)" : ""));
             for (int i = 0; i < amount; i++) {
-                Location loc = boss && bossLoc != null
-                        ? bossLoc
-                        : randomSpawnNearPlayer(region, world, player);
+                Location loc;
+                if (boss) {
+                    if (bossLoc == null) {
+                        plugin.getLogger().warning("[SphereManager] Boss location missing, skipping spawn of " + mythic);
+                        continue;
+                    }
+                    if (!isValidSpawnLocation(world, bossLoc.getBlockX(), bossLoc.getBlockY(), bossLoc.getBlockZ(), player)) {
+                        plugin.getLogger().warning("[SphereManager] Boss location blocked, skipping spawn of " + mythic);
+                        continue;
+                    }
+                    loc = bossLoc;
+                } else {
+                    loc = randomSpawnNearPlayer(region, world, player);
+                }
+
+                String locString = loc == null
+                        ? "null"
+                        : String.format("%s,%.1f,%.1f,%.1f", world.getName(),
+                                loc.getX(), loc.getY(), loc.getZ());
+                String cmd = String.format("mm m spawn %s 1 %s", mythic, locString);
                 if (loc != null && mythic != null) {
-                    String cmd = String.format("mm m spawn %s 1 %s,%.1f,%.1f,%.1f",
-                            mythic, world.getName(), loc.getX(), loc.getY(), loc.getZ());
+                    plugin.getLogger().info("[SphereManager] Dispatching command: " + cmd);
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+                } else {
+                    plugin.getLogger().warning("[SphereManager] Missing location or mythic id for spawn, skipping. Intended command: " + cmd);
                 }
             }
         }
     }
 
+    private boolean isValidSpawnLocation(World world, int x, int y, int z, Player player) {
+        Block block = world.getBlockAt(x, y, z);
+        if (block.getType() != Material.AIR) {
+            return false;
+        }
+        Block below = world.getBlockAt(x, y - 1, z);
+        if (!below.getType().isSolid()) {
+            return false;
+        }
+        Block above = world.getBlockAt(x, y + 1, z);
+        if (above.getType() != Material.STONE_BRICKS) {
+            for (int i = 1; i <= 6; i++) {
+                if (world.getBlockAt(x, y + i, z).getType() != Material.AIR) {
+                    return false;
+                }
+            }
+            if (world.getBlockAt(x, y + 7, z).getType() == Material.AIR) {
+                return false;
+            }
+        }
+        Location eye = player.getEyeLocation();
+        Location target = new Location(world, x + 0.5, y, z + 0.5);
+        Vector dir = target.toVector().subtract(eye.toVector());
+        if (world.rayTraceBlocks(eye, dir.normalize(), dir.length(), FluidCollisionMode.NEVER, true) != null) {
+            return false;
+        }
+        return true;
+    }
+
     private Location randomSpawnNearPlayer(Region region, World world, Player player) {
         Location base = player.getLocation();
-        Vector dir = base.getDirection().setY(0).normalize();
         for (int i = 0; i < 40; i++) {
-            double dist = 2 + random.nextDouble() * 2; // 2-4 blocks ahead
-            double angle = (random.nextDouble() - 0.5) * Math.PI / 3; // +/-30 degrees
-            Vector offset = dir.clone().rotateAroundY(angle).multiply(dist);
+            double dist = 5 + random.nextDouble() * 3; // 5-8 blocks around
+            double angle = random.nextDouble() * Math.PI * 2; // full circle
+            Vector offset = new Vector(Math.cos(angle), 0, Math.sin(angle)).multiply(dist);
             int x = base.getBlockX() + (int) Math.round(offset.getX());
             int z = base.getBlockZ() + (int) Math.round(offset.getZ());
             int y = base.getBlockY();
             if (!region.contains(BlockVector3.at(x, y, z))) {
                 continue;
             }
-            Block block = world.getBlockAt(x, y, z);
-            Block above = world.getBlockAt(x, y + 1, z);
-            Block below = world.getBlockAt(x, y - 1, z);
-            Block twoAbove = world.getBlockAt(x, y + 2, z);
-            if (block.getType() == Material.AIR && above.getType() == Material.AIR && below.getType().isSolid()
-                    && twoAbove.getType().isSolid()) {
+            if (isValidSpawnLocation(world, x, y, z, player)) {
+                return new Location(world, x + 0.5, y, z + 0.5);
+            }
+        }
+
+        int minX = region.getMinimumPoint().getBlockX();
+        int maxX = region.getMaximumPoint().getBlockX();
+        int minY = region.getMinimumPoint().getBlockY();
+        int maxY = region.getMaximumPoint().getBlockY();
+        int minZ = region.getMinimumPoint().getBlockZ();
+        int maxZ = region.getMaximumPoint().getBlockZ();
+
+        for (int i = 0; i < 80; i++) {
+            int x = random.nextInt(maxX - minX + 1) + minX;
+            int y = random.nextInt(maxY - minY + 1) + minY;
+            int z = random.nextInt(maxZ - minZ + 1) + minZ;
+            if (!region.contains(BlockVector3.at(x, y, z))) {
+                continue;
+            }
+            if (isValidSpawnLocation(world, x, y, z, player)) {
                 return new Location(world, x + 0.5, y, z + 0.5);
             }
         }

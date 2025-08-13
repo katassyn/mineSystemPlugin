@@ -76,6 +76,7 @@ debug:
   toolListener: false
 ```
 
+
 ## Sphere schematics
 Schematics live under `plugins/MineSystemPlugin/schematics/<Type>` where `<Type>`
 is one of:
@@ -110,6 +111,7 @@ schematic‑specific rewards. The schematic name may be given with or without
 the `.schem` extension. `/specialloot test <schematic>` previews the random
 loot for a schematic. Both edit commands open a 54‑slot inventory:
 
+
 - Items dragged from the player's inventory into the GUI are added with a
   default 50 % chance.
 - Change a chance by clicking an item.
@@ -119,10 +121,12 @@ loot for a schematic. Both edit commands open a 54‑slot inventory:
 - If the combined chances go over 100 %, they are automatically scaled so their
   proportions remain the same while the total equals 100 %.
 
+
 ## Stamina system
 Players consume stamina when entering spheres. Stamina regenerates after a delay
 and can be increased through quests. `/stamin` shows the current amount and time
 until reset.
+
 
 ## Pickaxes and crystals
 Mining uses custom pickaxes tracked in the database. `/mine_repair` restores
@@ -140,6 +144,7 @@ Random bonus items may drop when a sphere is completed.
 | `/spawnsphere` | Spawn a sphere for testing | `minesystemplugin.mine` |
 | `/specialloot <schematic>` | Edit loot for a specific schematic (extension optional) | `minesystemplugin.mine` |
 | `/specialloot test <schematic>` | Preview generated special loot (extension optional) | `minesystemplugin.mine` |
+
 | `/stamin` | Check your stamina | `minesystemplugin.mine` |
 
 The `minesystem.admin` permission bypasses mining restrictions.

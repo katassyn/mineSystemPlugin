@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.DatabaseMetaData;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,6 +52,15 @@ public class SpecialLootRepository {
     public CompletableFuture<Void> save(String schematic, List<SpecialLootEntry> items) {
         return CompletableFuture.runAsync(() -> {
             try (Connection con = database.getDataSource().getConnection()) {
+                boolean hasMaterial = false;
+                try {
+                    DatabaseMetaData meta = con.getMetaData();
+                    try (ResultSet rs = meta.getColumns(null, null, "special_loot", "material")) {
+                        hasMaterial = rs.next();
+                    }
+                } catch (SQLException ignored) {
+                }
+
                 try (PreparedStatement del = con.prepareStatement("DELETE FROM special_loot WHERE schematic = ?")) {
                     del.setString(1, schematic);
                     del.executeUpdate();
@@ -58,10 +68,14 @@ public class SpecialLootRepository {
 
                 try (PreparedStatement ps = con.prepareStatement(
                         "INSERT INTO special_loot(schematic, item, chance) VALUES(?, ?, ?)")) {
+
                     for (SpecialLootEntry entry : items) {
                         ps.setString(1, schematic);
                         ps.setString(2, ItemSerializer.serialize(entry.item()));
                         ps.setInt(3, entry.chance());
+                        if (hasMaterial) {
+                            ps.setString(4, entry.item().getType().name());
+                        }
                         ps.addBatch();
                     }
                     ps.executeBatch();

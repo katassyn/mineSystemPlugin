@@ -150,6 +150,7 @@ public class SpecialLootMenu implements InventoryHolder, Listener {
                 saveChanges();
                 event.getWhoClicked().closeInventory();
                 return;
+
             }
 
             if (slot == CANCEL_SLOT) {
@@ -195,6 +196,7 @@ public class SpecialLootMenu implements InventoryHolder, Listener {
                     current.setAmount(0);
                     break;
                 }
+
             }
         }
     }

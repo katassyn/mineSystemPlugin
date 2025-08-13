@@ -315,8 +315,10 @@ public class SphereManager {
                 bossLoc = new Location(origin.getWorld(), d.getX() + 0.5, d.getY() + 1, d.getZ() + 0.5);
             }
             Location finalBossLoc = bossLoc;
+            Region finalRegion = region;
+            Location finalOrigin = origin;
             Bukkit.getScheduler().runTaskLater(plugin,
-                    () -> spawnConfiguredMobs(schematic.getName(), region, origin.getWorld(),
+                    () -> spawnConfiguredMobs(schematic.getName(), finalRegion, finalOrigin.getWorld(),
                             player, finalBossLoc), 20L);
 
             if (schematic.getName().equals("special1.schem") || schematic.getName().equals("special2.schem")) {
@@ -324,8 +326,9 @@ public class SphereManager {
                 if (finalBossLoc != null) {
                     Location npcLoc = finalBossLoc;
 
+                    Location finalOrigin1 = origin;
                     Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                        String worldName = origin.getWorld().getName();
+                        String worldName = finalOrigin1.getWorld().getName();
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "npc select " + selectId);
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "npc copy");
                         String cmd = String.format(

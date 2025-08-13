@@ -107,7 +107,9 @@ The copied NPC is removed again when the sphere expires.
 
 ## Loot editing
 Use `/loot` to edit global sphere loot and `/specialloot <schematic>` for
-schematic‑specific rewards. Both commands open a 54‑slot inventory:
+schematic‑specific rewards. The schematic name may be given with or without
+the `.schem` extension. Both commands open a 54‑slot inventory:
+
 
 - Items dragged from the player's inventory into the GUI are added with a
   default 50 % chance.
@@ -136,7 +138,8 @@ Random bonus items may drop when a sphere is completed.
 | `/mine_repair` | Repair the item in hand using crystals | `minesystemplugin.mine` |
 | `/mine_enchant` | Enchant a pickaxe using crystals | `minesystemplugin.mine` |
 | `/spawnsphere` | Spawn a sphere for testing | `minesystemplugin.mine` |
-| `/specialloot <schematic>` | Edit loot for a specific schematic | `minesystemplugin.mine` |
+| `/specialloot <schematic>` | Edit loot for a specific schematic (extension optional) | `minesystemplugin.mine` |
+
 | `/stamin` | Check your stamina | `minesystemplugin.mine` |
 
 The `minesystem.admin` permission bypasses mining restrictions.

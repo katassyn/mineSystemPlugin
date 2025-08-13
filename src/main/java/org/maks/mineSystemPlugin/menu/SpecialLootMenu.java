@@ -6,8 +6,10 @@ import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -27,28 +29,40 @@ import java.util.List;
  * GUI for configuring fixed loot of special schematics.
  */
 public class SpecialLootMenu implements InventoryHolder, Listener {
+    private static final int INVENTORY_SIZE = 54;
+    private static final int SAVE_SLOT = 45;
+    private static final int CANCEL_SLOT = 53;
+
     private final JavaPlugin plugin;
     private final String schematic;
     private final SpecialLootRepository storage;
     private final SpecialLootManager manager;
     private final Inventory inventory;
     private final NamespacedKey chanceKey;
+    private boolean cancelClicked = false;
+    private boolean saveClicked = false;
 
     public SpecialLootMenu(JavaPlugin plugin, String schematic, SpecialLootRepository storage, SpecialLootManager manager) {
         this.plugin = plugin;
         this.schematic = schematic;
         this.storage = storage;
         this.manager = manager;
-        this.inventory = Bukkit.createInventory(this, 27, ChatColor.DARK_PURPLE + "Special Loot: " + schematic);
+        this.inventory = Bukkit.createInventory(this, INVENTORY_SIZE, ChatColor.DARK_PURPLE + "Special Loot: " + schematic);
         this.chanceKey = new NamespacedKey(plugin, "chance");
+
         List<SpecialLootEntry> existing = manager.getLoot(schematic);
+        int slot = 0;
         if (existing != null) {
             for (SpecialLootEntry e : existing) {
+                if (slot >= SAVE_SLOT) break;
                 ItemStack item = e.item().clone();
                 setChance(item, e.chance());
-                inventory.addItem(item);
+                inventory.setItem(slot++, item);
             }
         }
+
+        addActionButtons();
+
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
@@ -100,35 +114,117 @@ public class SpecialLootMenu implements InventoryHolder, Listener {
     }
 
 
+    private void addActionButtons() {
+        ItemStack save = new ItemStack(Material.EMERALD_BLOCK);
+        ItemMeta saveMeta = save.getItemMeta();
+        if (saveMeta != null) {
+            saveMeta.setDisplayName(ChatColor.GREEN + "Save Changes");
+            save.setItemMeta(saveMeta);
+        }
+        inventory.setItem(SAVE_SLOT, save);
+
+        ItemStack cancel = new ItemStack(Material.REDSTONE_BLOCK);
+        ItemMeta cancelMeta = cancel.getItemMeta();
+        if (cancelMeta != null) {
+            cancelMeta.setDisplayName(ChatColor.RED + "Cancel");
+            cancel.setItemMeta(cancelMeta);
+        }
+        inventory.setItem(CANCEL_SLOT, cancel);
+    }
+
     @EventHandler
-    public void onClick(InventoryClickEvent event) {
+    public void onInventoryClick(InventoryClickEvent event) {
         if (event.getInventory().getHolder() != this) {
             return;
         }
-        ItemStack item = event.getCurrentItem();
-        if (item == null || item.getType() == Material.AIR) {
+
+        int slot = event.getRawSlot();
+        ItemStack current = event.getCurrentItem();
+
+        // Clicks in top inventory
+        if (slot < event.getView().getTopInventory().getSize()) {
+            event.setCancelled(true);
+
+            if (slot == SAVE_SLOT) {
+                saveClicked = true;
+                saveChanges();
+                event.getWhoClicked().closeInventory();
+                return;
+            }
+
+            if (slot == CANCEL_SLOT) {
+                cancelClicked = true;
+                event.getWhoClicked().closeInventory();
+                return;
+            }
+
+            // Item slots
+            if (slot < SAVE_SLOT) {
+                if ((current == null || current.getType() == Material.AIR)) {
+                    ItemStack cursor = event.getCursor();
+                    if (cursor != null && cursor.getType() != Material.AIR) {
+                        ItemStack item = cursor.clone();
+                        setChance(item, 50);
+                        inventory.setItem(slot, item);
+                        event.getView().setCursor(null);
+                    }
+                    return;
+                }
+
+                switch (event.getClick()) {
+                    case LEFT -> updateChance(current, 10);
+                    case RIGHT -> updateChance(current, -10);
+                    case SHIFT_LEFT -> updateChance(current, 1);
+                    case SHIFT_RIGHT -> updateChance(current, -1);
+                    case MIDDLE -> inventory.setItem(slot, null);
+                    default -> {
+                    }
+                }
+            }
             return;
         }
-        switch (event.getClick()) {
-            case LEFT -> {
-                updateChance(item, 10);
-                event.setCancelled(true);
-            }
-            case RIGHT -> {
-                updateChance(item, -10);
-                event.setCancelled(true);
-            }
-            case SHIFT_LEFT -> {
-                updateChance(item, 1);
-                event.setCancelled(true);
-            }
-            case SHIFT_RIGHT -> {
-                updateChance(item, -1);
-                event.setCancelled(true);
-            }
-            default -> {
+
+        // Click in player's inventory
+        if ((event.getClick() == ClickType.SHIFT_LEFT || event.getClick() == ClickType.SHIFT_RIGHT) && current != null && current.getType() != Material.AIR) {
+            event.setCancelled(true);
+            for (int i = 0; i < SAVE_SLOT; i++) {
+                if (inventory.getItem(i) == null) {
+                    ItemStack item = current.clone();
+                    setChance(item, 50);
+                    inventory.setItem(i, item);
+                    current.setAmount(0);
+                    break;
+                }
             }
         }
+    }
+
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (event.getInventory().getHolder() != this) {
+            return;
+        }
+        for (int slot : event.getRawSlots()) {
+            if (slot < event.getView().getTopInventory().getSize()) {
+                if (slot >= SAVE_SLOT) {
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
+    }
+
+    private void saveChanges() {
+        List<SpecialLootEntry> list = new ArrayList<>();
+        for (int i = 0; i < SAVE_SLOT; i++) {
+            ItemStack item = inventory.getItem(i);
+            if (item == null || item.getType() == Material.AIR) continue;
+            int chance = getChance(item);
+            ItemStack clean = stripChance(item);
+            list.add(new SpecialLootEntry(clean, chance));
+        }
+        storage.save(schematic, list);
+        manager.setLoot(schematic, list);
     }
 
     @EventHandler
@@ -137,14 +233,8 @@ public class SpecialLootMenu implements InventoryHolder, Listener {
             return;
         }
         HandlerList.unregisterAll(this);
-        List<SpecialLootEntry> list = new ArrayList<>();
-        for (ItemStack item : inventory.getContents()) {
-            if (item == null || item.getType() == Material.AIR) continue;
-            int chance = getChance(item);
-            ItemStack clean = stripChance(item);
-            list.add(new SpecialLootEntry(clean, chance));
+        if (!cancelClicked && !saveClicked) {
+            saveChanges();
         }
-        storage.save(schematic, list);
-        manager.setLoot(schematic, list);
     }
 }

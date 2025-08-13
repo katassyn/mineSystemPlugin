@@ -14,7 +14,6 @@ public enum SphereType {
     MOB("Mob", 15),
     BOSS("Boss", 3),
     SPECIAL_EVENT("SpecialEvent", 5),
-    PUZZLE("Puzzle", 7),
     CRYSTAL_DUST("CrystalDust", 5);
 
     private static final Random RANDOM = new Random();
@@ -39,7 +38,14 @@ public enum SphereType {
      * Chooses a random sphere type using the configured weights.
      */
     public static SphereType random() {
-        List<SphereType> types = Arrays.asList(values());
+        return random(Arrays.asList(values()));
+    }
+
+    /**
+     * Chooses a random sphere type from the provided list, normalizing weights
+     * so that excluded types do not skew the distribution.
+     */
+    public static SphereType random(List<SphereType> types) {
         int total = types.stream().mapToInt(SphereType::getWeight).sum();
         int r = RANDOM.nextInt(total);
         int current = 0;
@@ -49,6 +55,6 @@ public enum SphereType {
                 return type;
             }
         }
-        return ORE; // Fallback
+        return types.get(0); // Fallback
     }
 }

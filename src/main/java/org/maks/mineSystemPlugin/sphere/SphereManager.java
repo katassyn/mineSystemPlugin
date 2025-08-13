@@ -550,7 +550,7 @@ public class SphereManager {
                     plugin.getLogger().info("[SphereManager] Dispatching command: " + cmd);
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
                 } else {
-                    plugin.getLogger().warning("[SphereManager] Missing location or mythic id for spawn. Intended command: " + cmd);
+                    plugin.getLogger().warning("[SphereManager] Missing location or mythic id for spawn, skipping. Intended command: " + cmd);
 
                 }
             }
@@ -559,11 +559,10 @@ public class SphereManager {
 
     private Location randomSpawnNearPlayer(Region region, World world, Player player) {
         Location base = player.getLocation();
-        Vector dir = base.getDirection().setY(0).normalize();
         for (int i = 0; i < 40; i++) {
-            double dist = 2 + random.nextDouble() * 2; // 2-4 blocks ahead
-            double angle = (random.nextDouble() - 0.5) * Math.PI / 3; // +/-30 degrees
-            Vector offset = dir.clone().rotateAroundY(angle).multiply(dist);
+            double dist = 2 + random.nextDouble() * 2; // 2-4 blocks around
+            double angle = random.nextDouble() * Math.PI * 2; // full circle
+            Vector offset = new Vector(Math.cos(angle), 0, Math.sin(angle)).multiply(dist);
             int x = base.getBlockX() + (int) Math.round(offset.getX());
             int z = base.getBlockZ() + (int) Math.round(offset.getZ());
             int y = base.getBlockY();

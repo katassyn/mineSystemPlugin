@@ -76,6 +76,7 @@ debug:
   toolListener: false
 ```
 
+
 ## Sphere schematics
 Schematics live under `plugins/MineSystemPlugin/schematics/<Type>` where `<Type>`
 is one of:

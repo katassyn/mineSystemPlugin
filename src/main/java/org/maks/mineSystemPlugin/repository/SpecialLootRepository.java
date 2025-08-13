@@ -66,10 +66,9 @@ public class SpecialLootRepository {
                     del.executeUpdate();
                 }
 
-                String sql = hasMaterial
-                        ? "INSERT INTO special_loot(schematic, item, chance, material) VALUES(?, ?, ?, ?)"
-                        : "INSERT INTO special_loot(schematic, item, chance) VALUES(?, ?, ?)";
-                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                try (PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO special_loot(schematic, item, chance) VALUES(?, ?, ?)")) {
+
                     for (SpecialLootEntry entry : items) {
                         ps.setString(1, schematic);
                         ps.setString(2, ItemSerializer.serialize(entry.item()));

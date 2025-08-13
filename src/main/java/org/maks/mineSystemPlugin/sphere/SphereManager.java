@@ -30,6 +30,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.configuration.ConfigurationSection;
 import org.maks.mineSystemPlugin.events.SphereCompleteEvent;
 import org.maks.mineSystemPlugin.LootManager;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
@@ -510,6 +511,22 @@ public class SphereManager {
     private void spawnConfiguredMobs(String schematic, Region region, World world,
                                      Player player, Location bossLoc) {
         List<Map<?, ?>> entries = ((JavaPlugin) plugin).getConfig().getMapList("mobs." + schematic);
+        if (entries.isEmpty()) {
+            ConfigurationSection mobs = ((JavaPlugin) plugin).getConfig().getConfigurationSection("mobs");
+            if (mobs != null) {
+                Object raw = mobs.getValues(false).get(schematic);
+                if (raw instanceof List<?>) {
+                    entries = new ArrayList<>();
+                    for (Object o : (List<?>) raw) {
+                        if (o instanceof Map<?, ?> map) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, Object> casted = (Map<String, Object>) map;
+                            entries.add(casted);
+                        }
+                    }
+                }
+            }
+        }
         for (Map<?, ?> entry : entries) {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) entry;

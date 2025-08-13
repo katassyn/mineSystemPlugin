@@ -28,9 +28,10 @@ public class Sphere {
     private final Location origin;
     private final List<ArmorStand> holograms;
     private final List<BukkitTask> warningTasks;
+    private final String schematicName;
 
     public Sphere(SphereType type, Region region, BukkitTask expiryTask, World world, Location origin,
-                  List<ArmorStand> holograms, List<BukkitTask> warningTasks) {
+                  List<ArmorStand> holograms, List<BukkitTask> warningTasks, String schematicName) {
         this.type = type;
         this.region = region;
         this.expiryTask = expiryTask;
@@ -38,6 +39,7 @@ public class Sphere {
         this.origin = origin;
         this.holograms = holograms;
         this.warningTasks = warningTasks;
+        this.schematicName = schematicName;
     }
 
     public SphereType getType() {
@@ -50,6 +52,10 @@ public class Sphere {
 
     public World getWorld() {
         return world;
+    }
+
+    public String getSchematicName() {
+        return schematicName;
     }
 
     /**

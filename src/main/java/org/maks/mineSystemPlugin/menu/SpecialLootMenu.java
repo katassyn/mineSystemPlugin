@@ -6,6 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
@@ -102,13 +103,44 @@ public class SpecialLootMenu implements InventoryHolder, Listener {
 
     @EventHandler
     public void onClick(InventoryClickEvent event) {
-        if (event.getInventory().getHolder() != this) {
+        if (event.getView().getTopInventory().getHolder() != this) {
             return;
         }
+
+        Inventory clicked = event.getClickedInventory();
+        if (clicked == null) {
+            return;
+        }
+
+        // Click in player's inventory
+        if (clicked.getHolder() != this) {
+            ClickType type = event.getClick();
+            if ((type == ClickType.SHIFT_LEFT || type == ClickType.SHIFT_RIGHT)) {
+                ItemStack current = event.getCurrentItem();
+                if (current != null && current.getType() != Material.AIR) {
+                    event.setCancelled(true);
+                    ItemStack item = current.clone();
+                    setChance(item, 50);
+                    inventory.addItem(item);
+                    current.setAmount(0);
+                }
+            }
+            return;
+        }
+
         ItemStack item = event.getCurrentItem();
         if (item == null || item.getType() == Material.AIR) {
+            ItemStack cursor = event.getCursor();
+            if (cursor != null && cursor.getType() != Material.AIR) {
+                ItemStack clone = cursor.clone();
+                setChance(clone, 50);
+                event.setCurrentItem(clone);
+                event.getView().setCursor(null);
+                event.setCancelled(true);
+            }
             return;
         }
+
         switch (event.getClick()) {
             case LEFT -> {
                 updateChance(item, 10);
@@ -124,6 +156,10 @@ public class SpecialLootMenu implements InventoryHolder, Listener {
             }
             case SHIFT_RIGHT -> {
                 updateChance(item, -1);
+                event.setCancelled(true);
+            }
+            case MIDDLE -> {
+                event.setCurrentItem(null);
                 event.setCancelled(true);
             }
             default -> {

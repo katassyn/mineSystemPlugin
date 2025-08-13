@@ -49,6 +49,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  * Manages active mining spheres.
@@ -171,12 +173,19 @@ public class SphereManager {
         }
         stamina.deductStamina(player.getUniqueId(), 10);
 
-        SphereType type = SphereType.random();
-        File folder = new File(plugin.getDataFolder(), "schematics/" + type.getFolderName());
-        if (!folder.exists()) {
-            player.sendMessage("No schematics for type " + type.name());
+        List<SphereType> options = Arrays.stream(SphereType.values())
+                .filter(t -> {
+                    File f = new File(plugin.getDataFolder(), "schematics/" + t.getFolderName());
+                    File[] s = f.listFiles((dir, name) -> name.endsWith(".schem"));
+                    return s != null && s.length > 0;
+                })
+                .collect(Collectors.toList());
+        if (options.isEmpty()) {
+            player.sendMessage("No schematics found");
             return false;
         }
+        SphereType type = SphereType.random(options);
+        File folder = new File(plugin.getDataFolder(), "schematics/" + type.getFolderName());
         File[] schems = folder.listFiles((dir, name) -> name.endsWith(".schem"));
         if (schems == null || schems.length == 0) {
             player.sendMessage("No schematics found");
@@ -195,6 +204,7 @@ public class SphereManager {
             Clipboard clipboard = reader.read();
             Map<BlockVector3, OreVariant> variants = replacePlaceholders(clipboard, premium);
             BlockVector3 goldVec = findGoldBlock(clipboard);
+            BlockVector3 diamondVec = findDiamondBlock(clipboard);
 
             Region clipRegion = clipboard.getRegion();
             BlockVector3 pastePos = BlockVector3.at(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ());
@@ -244,7 +254,7 @@ public class SphereManager {
                 }
             }.runTaskTimer(plugin, LIFE_TIME_TICKS - 200L, 20L));
 
-            Sphere sphere = new Sphere(type, region, task, origin.getWorld(), origin, holograms, warnings);
+            Sphere sphere = new Sphere(type, region, task, origin.getWorld(), origin, holograms, warnings, schematic.getName());
             active.put(player.getUniqueId(), sphere);
             sphereRepository.save(new SphereData(player.getUniqueId(), type.name(), System.currentTimeMillis()));
             Location teleport;
@@ -264,6 +274,23 @@ public class SphereManager {
             int baseY = teleport.getBlockY();
             Bukkit.getScheduler().runTaskLater(plugin,
                     () -> spawnConfiguredMobs(schematic.getName(), region, origin.getWorld(), baseY), 20L);
+
+            if (schematic.getName().equals("special1.schem") || schematic.getName().equals("special2.schem")) {
+                int selectId = schematic.getName().equals("special1.schem") ? 61 : 62;
+                if (diamondVec != null) {
+                    BlockVector3 d = diamondVec.add(shift);
+                    Location npcLoc = new Location(origin.getWorld(), d.getX() + 0.5, d.getY() + 1, d.getZ() + 0.5);
+                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                        String worldName = origin.getWorld().getName();
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "npc select " + selectId);
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "npc copy");
+                        String cmd = String.format(
+                                "npc moveto --world %s --x %.1f --y %.1f --z %.1f",
+                                worldName, npcLoc.getX(), npcLoc.getY(), npcLoc.getZ());
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+                    }, 60L);
+                }
+            }
             return true;
         } catch (IOException | WorldEditException e) {
             player.sendMessage("Failed to create sphere");
@@ -314,6 +341,17 @@ public class SphereManager {
         for (BlockVector3 vec : region) {
             BlockState state = clipboard.getBlock(vec);
             if (state.getBlockType().getId().equals("minecraft:gold_block")) {
+                return vec;
+            }
+        }
+        return null;
+    }
+
+    private BlockVector3 findDiamondBlock(Clipboard clipboard) {
+        Region region = clipboard.getRegion();
+        for (BlockVector3 vec : region) {
+            BlockState state = clipboard.getBlock(vec);
+            if (state.getBlockType().getId().equals("minecraft:diamond_block")) {
                 return vec;
             }
         }
@@ -449,7 +487,9 @@ public class SphereManager {
             Block block = world.getBlockAt(x, y, z);
             Block above = world.getBlockAt(x, y + 1, z);
             Block below = world.getBlockAt(x, y - 1, z);
-            if (block.getType() == Material.AIR && above.getType() == Material.AIR && below.getType().isSolid()) {
+            Block twoAbove = world.getBlockAt(x, y + 2, z);
+            if (block.getType() == Material.AIR && above.getType() == Material.AIR && below.getType().isSolid()
+                    && twoAbove.getType().isSolid()) {
                 return new Location(world, x + 0.5, y, z + 0.5);
             }
         }
@@ -540,6 +580,9 @@ public class SphereManager {
                 );
             }
             sphere.remove();
+            if ("special1.schem".equals(sphere.getSchematicName()) || "special2.schem".equals(sphere.getSchematicName())) {
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "npc rem");
+            }
             clearHolograms(sphere);
             sphereRepository.save(new SphereData(uuid, sphere.getType().name(), 0L));
         }

@@ -56,10 +56,11 @@ public class LootManager {
         if (total <= 0) {
             return null;
         }
-        int r = random.nextInt(total);
-        int cumulative = 0;
+        double scale = total > 100 ? 100.0 / total : 1.0;
+        int r = random.nextInt(100);
+        double cumulative = 0;
         for (LootEntry entry : entries) {
-            cumulative += entry.chance();
+            cumulative += entry.chance() * scale;
             if (r < cumulative) {
                 return entry.item().clone();
             }

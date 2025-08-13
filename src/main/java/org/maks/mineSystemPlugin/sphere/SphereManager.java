@@ -267,9 +267,6 @@ public class SphereManager {
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 player.teleport(teleport);
                 handleMove(player, teleport);
-                String coords = String.format("%d %d %d", teleport.getBlockX(), teleport.getBlockY() - 1, teleport.getBlockZ());
-                player.sendMessage(ChatColor.YELLOW + "Teleported to sphere at " + coords);
-
             }, 40L);
             int baseY = teleport.getBlockY();
             Bukkit.getScheduler().runTaskLater(plugin,

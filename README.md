@@ -76,6 +76,7 @@ debug:
   toolListener: false
 ```
 
+
 ## Sphere schematics
 Schematics live under `plugins/MineSystemPlugin/schematics/<Type>` where `<Type>`
 is one of:
@@ -119,6 +120,7 @@ schematic‑specific rewards. Both commands open a 54‑slot inventory:
 Players consume stamina when entering spheres. Stamina regenerates after a delay
 and can be increased through quests. `/stamin` shows the current amount and time
 until reset.
+
 
 ## Pickaxes and crystals
 Mining uses custom pickaxes tracked in the database. `/mine_repair` restores

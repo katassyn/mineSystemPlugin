@@ -541,13 +541,17 @@ public class SphereManager {
                 Location loc = boss && bossLoc != null
                         ? bossLoc
                         : randomSpawnNearPlayer(region, world, player);
+                String locString = loc == null
+                        ? "null"
+                        : String.format("%s,%.1f,%.1f,%.1f", world.getName(),
+                                loc.getX(), loc.getY(), loc.getZ());
+                String cmd = String.format("mm m spawn %s 1 %s", mythic, locString);
                 if (loc != null && mythic != null) {
-                    String cmd = String.format("mm m spawn %s 1 %s,%.1f,%.1f,%.1f",
-                            mythic, world.getName(), loc.getX(), loc.getY(), loc.getZ());
                     plugin.getLogger().info("[SphereManager] Dispatching command: " + cmd);
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
                 } else {
-                    plugin.getLogger().warning("[SphereManager] Missing location or mythic id for spawn");
+                    plugin.getLogger().warning("[SphereManager] Missing location or mythic id for spawn. Intended command: " + cmd);
+
                 }
             }
         }

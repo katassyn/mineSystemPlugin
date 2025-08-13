@@ -34,6 +34,9 @@ public class SpecialLootCommand implements CommandExecutor {
             return true;
         }
         String schem = args[0];
+        if (!schem.endsWith(".schem")) {
+            schem += ".schem";
+        }
         SpecialLootMenu menu = new SpecialLootMenu(plugin, schem, storage, manager);
         player.openInventory(menu.getInventory());
         return true;

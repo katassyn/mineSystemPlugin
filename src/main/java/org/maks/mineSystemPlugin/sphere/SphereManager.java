@@ -429,6 +429,7 @@ public class SphereManager {
                 if (loc != null && mythic != null) {
                     String cmd = String.format("mm m spawn %s 1 %s,%.1f,%.1f,%.1f",
                             mythic, world.getName(), loc.getX(), loc.getY(), loc.getZ());
+
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
                 }
             }

@@ -32,6 +32,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.configuration.ConfigurationSection;
 import org.maks.mineSystemPlugin.events.SphereCompleteEvent;
 import org.maks.mineSystemPlugin.LootManager;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
@@ -327,6 +328,7 @@ public class SphereManager {
                 spawnConfiguredMobs(schemName, finalRegion, finalOrigin.getWorld(), player, finalBossLoc);
             }, 40L);
 
+
             if (schematic.getName().equals("special1.schem") || schematic.getName().equals("special2.schem")) {
                 int selectId = schematic.getName().equals("special1.schem") ? 61 : 62;
                 if (finalBossLoc != null) {
@@ -530,6 +532,7 @@ public class SphereManager {
             }
         }
         plugin.getLogger().info("[SphereManager] Found " + entries.size() + " mob entries");
+
         for (Map<?, ?> entry : entries) {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) entry;
@@ -538,6 +541,7 @@ public class SphereManager {
             int amount = amtNum.intValue();
             Object bossObj = map.get("boss");
             boolean boss = bossObj != null && Boolean.parseBoolean(String.valueOf(bossObj));
+
             plugin.getLogger().info("[SphereManager] Spawning " + amount + " of " + mythic + (boss ? " (boss)" : ""));
             for (int i = 0; i < amount; i++) {
                 Location loc;
@@ -547,6 +551,7 @@ public class SphereManager {
                         continue;
                     }
                     if (!isValidSpawnLocation(world, bossLoc.getBlockX(), bossLoc.getBlockY(), bossLoc.getBlockZ(), null)) {
+
                         plugin.getLogger().warning("[SphereManager] Boss location blocked, skipping spawn of " + mythic);
                         continue;
                     }
@@ -554,6 +559,7 @@ public class SphereManager {
                 } else {
                     loc = randomSpawnNearPlayer(region, world, player);
                 }
+
 
                 String locString = loc == null
                         ? "null"
@@ -584,6 +590,7 @@ public class SphereManager {
             for (int i = 1; i <= 6; i++) {
                 if (world.getBlockAt(x, y + i, z).getType() != Material.AIR) {
                     return false;
+
                 }
             }
             if (world.getBlockAt(x, y + 7, z).getType() == Material.AIR) {
@@ -615,10 +622,41 @@ public class SphereManager {
         return null;
     }
 
+    private boolean isValidSpawnLocation(World world, int x, int y, int z, Player player) {
+        Block block = world.getBlockAt(x, y, z);
+        if (block.getType() != Material.AIR) {
+            return false;
+        }
+        Block below = world.getBlockAt(x, y - 1, z);
+        if (!below.getType().isSolid()) {
+            return false;
+        }
+        Block above = world.getBlockAt(x, y + 1, z);
+        if (above.getType() != Material.STONE_BRICKS) {
+            for (int i = 1; i <= 6; i++) {
+                if (world.getBlockAt(x, y + i, z).getType() != Material.AIR) {
+                    return false;
+
+                }
+            }
+            if (world.getBlockAt(x, y + 7, z).getType() == Material.AIR) {
+                return false;
+            }
+        }
+        Location eye = player.getEyeLocation();
+        Location target = new Location(world, x + 0.5, y, z + 0.5);
+        Vector dir = target.toVector().subtract(eye.toVector());
+        if (world.rayTraceBlocks(eye, dir.normalize(), dir.length(), FluidCollisionMode.NEVER, true) != null) {
+            return false;
+        }
+        return true;
+    }
+
     private Location randomSpawnNearPlayer(Region region, World world, Player player) {
         Location base = player.getLocation();
         for (int i = 0; i < 40; i++) {
             double dist = 5 + random.nextDouble() * 3; // 5-8 blocks around
+
             double angle = random.nextDouble() * Math.PI * 2; // full circle
             Vector offset = new Vector(Math.cos(angle), 0, Math.sin(angle)).multiply(dist);
             int x = base.getBlockX() + (int) Math.round(offset.getX());
@@ -627,10 +665,12 @@ public class SphereManager {
             if (loc != null) {
                 return loc;
             }
+
         }
 
         int minX = region.getMinimumPoint().getBlockX();
         int maxX = region.getMaximumPoint().getBlockX();
+
         int minZ = region.getMinimumPoint().getBlockZ();
         int maxZ = region.getMaximumPoint().getBlockZ();
 
@@ -640,6 +680,7 @@ public class SphereManager {
             Location loc = findSpawnInColumn(x, z, region, world, player);
             if (loc != null) {
                 return loc;
+
             }
         }
         return null;

@@ -385,13 +385,14 @@ public class SphereManager {
     private void populateChests(World world, Region region, SphereType type, String schematicName) {
         MineSystemPlugin pluginImpl = (MineSystemPlugin) plugin;
         SpecialLootManager special = pluginImpl.getSpecialLootManager();
-        Map<Material, SpecialLootEntry> specialLoot = (Map<Material, SpecialLootEntry>) special.getLoot(schematicName);
+        List<SpecialLootEntry> specialLoot = special.getLoot(schematicName);
         LootManager loot = pluginImpl.getLootManager();
-        boolean treasure = type == SphereType.TREASURE && (specialLoot == null || specialLoot.isEmpty());
+        boolean hasSpecial = specialLoot != null && !specialLoot.isEmpty();
+        boolean treasure = type == SphereType.TREASURE && !hasSpecial;
         for (BlockVector3 vec : region) {
             Block block = world.getBlockAt(vec.getX(), vec.getY(), vec.getZ());
             if (block.getState() instanceof Chest chest) {
-                if (specialLoot != null && !specialLoot.isEmpty()) {
+                if (hasSpecial) {
                     special.fillInventory(schematicName, chest.getBlockInventory());
                 } else if (treasure) {
                     loot.fillInventory(chest.getBlockInventory());

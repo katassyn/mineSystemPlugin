@@ -523,6 +523,7 @@ public class SphereManager {
                             Map<String, Object> casted = (Map<String, Object>) map;
                             entries.add(casted);
                         }
+
                     }
                 }
             }

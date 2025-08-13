@@ -28,6 +28,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.maks.mineSystemPlugin.events.SphereCompleteEvent;
@@ -317,9 +318,12 @@ public class SphereManager {
             Location finalBossLoc = bossLoc;
             Region finalRegion = region;
             Location finalOrigin = origin;
-            Bukkit.getScheduler().runTaskLater(plugin,
-                    () -> spawnConfiguredMobs(schematic.getName(), finalRegion, finalOrigin.getWorld(),
-                            player, finalBossLoc), 20L);
+            plugin.getLogger().info("[SphereManager] Scheduling mob spawn for " + schematic.getName());
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                plugin.getLogger().info("[SphereManager] Running mob spawn for " + schematic.getName());
+                spawnConfiguredMobs(schematic.getName(), finalRegion, finalOrigin.getWorld(),
+                        player, finalBossLoc);
+            }, 20L);
 
             if (schematic.getName().equals("special1.schem") || schematic.getName().equals("special2.schem")) {
                 int selectId = schematic.getName().equals("special1.schem") ? 61 : 62;
@@ -509,7 +513,21 @@ public class SphereManager {
 
     private void spawnConfiguredMobs(String schematic, Region region, World world,
                                      Player player, Location bossLoc) {
-        List<Map<?, ?>> entries = ((JavaPlugin) plugin).getConfig().getMapList("mobs." + schematic);
+        String key = "mobs." + schematic.replace(".", "\\.");
+        plugin.getLogger().info("[SphereManager] Loading mob config at key: " + key);
+        List<Map<?, ?>> entries = ((JavaPlugin) plugin).getConfig().getMapList(key);
+        if (entries.isEmpty()) {
+            plugin.getLogger().warning("[SphereManager] No entries found via getMapList, attempting fallback");
+            ConfigurationSection section = ((JavaPlugin) plugin).getConfig().getConfigurationSection("mobs");
+            if (section != null) {
+                Object raw = section.get(schematic);
+                if (raw instanceof List<?>) {
+                    //noinspection unchecked
+                    entries = (List<Map<?, ?>>) raw;
+                }
+            }
+        }
+        plugin.getLogger().info("[SphereManager] Found " + entries.size() + " mob entries");
         for (Map<?, ?> entry : entries) {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) entry;
@@ -517,6 +535,7 @@ public class SphereManager {
             Number amtNum = (Number) map.getOrDefault("amount", 1);
             int amount = amtNum.intValue();
             boolean boss = Boolean.TRUE.equals(map.get("boss"));
+            plugin.getLogger().info("[SphereManager] Spawning " + amount + " of " + mythic + (boss ? " (boss)" : ""));
             for (int i = 0; i < amount; i++) {
                 Location loc = boss && bossLoc != null
                         ? bossLoc
@@ -524,7 +543,10 @@ public class SphereManager {
                 if (loc != null && mythic != null) {
                     String cmd = String.format("mm m spawn %s 1 %s,%.1f,%.1f,%.1f",
                             mythic, world.getName(), loc.getX(), loc.getY(), loc.getZ());
+                    plugin.getLogger().info("[SphereManager] Dispatching command: " + cmd);
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+                } else {
+                    plugin.getLogger().warning("[SphereManager] Missing location or mythic id for spawn");
                 }
             }
         }

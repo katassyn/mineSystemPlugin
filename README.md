@@ -120,6 +120,7 @@ Players consume stamina when entering spheres. Stamina regenerates after a delay
 and can be increased through quests. `/stamin` shows the current amount and time
 until reset.
 
+
 ## Pickaxes and crystals
 Mining uses custom pickaxes tracked in the database. `/mine_repair` restores
 durability using crystals and `/mine_enchant` applies crystal‑based enchants.

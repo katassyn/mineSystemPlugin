@@ -431,6 +431,7 @@ public class SphereManager {
                     float pitch = 0f;
                     String cmd = String.format("mm m spawn %s %s %.1f %.1f %.1f %.1f %.1f",
                             mythic, world.getName(), loc.getX(), loc.getY(), loc.getZ(), yaw, pitch);
+
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
                 }
             }

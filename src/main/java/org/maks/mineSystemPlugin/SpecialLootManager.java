@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Holds fixed loot tables per schematic for special zones.
@@ -36,20 +38,24 @@ public class SpecialLootManager {
         int total = items.stream().mapToInt(SpecialLootEntry::chance).sum();
         double scale = total > 100 ? 100.0 / total : 1.0;
 
-        List<Integer> slots = new ArrayList<>();
-        for (int i = 0; i < inventory.getSize(); i++) {
-            slots.add(i);
-        }
+        List<Integer> slots = IntStream.range(0, inventory.getSize())
+                .boxed()
+                .collect(Collectors.toCollection(ArrayList::new));
         Collections.shuffle(slots, random);
-        int i = 0;
-        for (SpecialLootEntry entry : items) {
-            if (i >= slots.size()) {
-                break;
-            }
-            double effective = entry.chance() * scale;
-            if (random.nextDouble() * 100 < effective) {
-                inventory.setItem(slots.get(i), entry.item().clone());
-                i++;
+
+        int toFill = Math.max(3, Math.min(inventory.getSize(), items.size()));
+        double weightSum = items.stream().mapToDouble(e -> e.chance() * scale).sum();
+
+        for (int i = 0; i < toFill; i++) {
+            double r = random.nextDouble() * weightSum;
+            double cumulative = 0;
+            for (SpecialLootEntry entry : items) {
+                cumulative += entry.chance() * scale;
+                if (r <= cumulative) {
+                    inventory.setItem(slots.get(i), entry.item().clone());
+                    break;
+                }
+
             }
         }
     }

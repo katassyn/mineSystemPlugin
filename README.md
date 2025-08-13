@@ -9,8 +9,12 @@ fight mobs or bosses, and earn configurable loot and currency.
 - Custom ores with durability and random variants
 - Timed spheres that clear themselves and remove spawned mobs
 - Loot editor GUI and per-schematic special loot with Save/Cancel controls
+- Special loot chests always roll items per slot and contain at least three rewards
 - Optional Citizens NPCs for special1.schem and special2.schem
 - Mob spawning that requires a solid ceiling to keep entities inside
+- Spheres spawn only within -753,-61,-1281 to -381,143,-1658 and never overlap, keeping the world size in check
+- Entering a sphere shows its type in a title
+
 - Stamina system with quest-based max stamina bonuses
 - Pickaxe repair/enchant commands using Crystal currency
 - Database-backed persistence for players, pickaxes, loot and schematics
@@ -111,7 +115,6 @@ schematic‑specific rewards. The schematic name may be given with or without
 the `.schem` extension. `/specialloot test <schematic>` previews the random
 loot for a schematic. Both edit commands open a 54‑slot inventory:
 
-
 - Items dragged from the player's inventory into the GUI are added with a
   default 50 % chance.
 - Change a chance by clicking an item.
@@ -120,18 +123,19 @@ loot for a schematic. Both edit commands open a 54‑slot inventory:
 - Special loot menus also save automatically when closed.
 - If the combined chances go over 100 %, they are automatically scaled so their
   proportions remain the same while the total equals 100 %.
-
+- Special loot generation fills at least three slots, picking an item for each from
+  the weighted chances so chests are never empty.
 
 ## Stamina system
 Players consume stamina when entering spheres. Stamina regenerates after a delay
 and can be increased through quests. `/stamin` shows the current amount and time
 until reset.
 
-
 ## Pickaxes and crystals
 Mining uses custom pickaxes tracked in the database. `/mine_repair` restores
 durability using crystals and `/mine_enchant` applies crystal‑based enchants.
 Random bonus items may drop when a sphere is completed.
+
 
 ## Commands
 

@@ -117,6 +117,14 @@ public class SphereManager {
             }
     );
 
+    private static final int MIN_X = -753;
+    private static final int MAX_X = -381;
+    private static final int MIN_Y = -61;
+    private static final int MAX_Y = 143;
+    private static final int MIN_Z = -1658;
+    private static final int MAX_Z = -1281;
+    private static final int SPHERE_SPACING = 10;
+
     private final Plugin plugin;
     private final Map<UUID, Sphere> active = new HashMap<>();
     private final Random random = new Random();
@@ -199,19 +207,51 @@ public class SphereManager {
             return false;
         }
 
-        Location origin = randomFarLocation(player.getWorld());
         try (ClipboardReader reader = format.getReader(new FileInputStream(schematic))) {
             Clipboard clipboard = reader.read();
+            Region clipRegion = clipboard.getRegion();
+            BlockVector3 size = clipRegion.getMaximumPoint().subtract(clipRegion.getMinimumPoint());
+
+            BlockVector3 boundsMin = BlockVector3.at(MIN_X, MIN_Y, MIN_Z);
+            BlockVector3 boundsMax = BlockVector3.at(MAX_X, MAX_Y, MAX_Z);
+            int xRange = boundsMax.getBlockX() - boundsMin.getBlockX() - size.getBlockX();
+            int yRange = boundsMax.getBlockY() - boundsMin.getBlockY() - size.getBlockY();
+            int zRange = boundsMax.getBlockZ() - boundsMin.getBlockZ() - size.getBlockZ();
+
+            Location origin = null;
+            Region region = null;
+            BlockVector3 shift = null;
+            BlockVector3 pastePos = null;
+            for (int attempt = 0; attempt < 100; attempt++) {
+                int x = boundsMin.getBlockX() + random.nextInt(xRange + 1);
+                int y = boundsMin.getBlockY() + random.nextInt(yRange + 1);
+                int z = boundsMin.getBlockZ() + random.nextInt(zRange + 1);
+                BlockVector3 min = BlockVector3.at(x, y, z);
+                Region candidate = new CuboidRegion(min, min.add(size));
+                boolean overlap = false;
+                for (Sphere s : active.values()) {
+                    if (intersects(s.getRegion(), candidate, SPHERE_SPACING)) {
+                        overlap = true;
+                        break;
+                    }
+                }
+                if (!overlap) {
+                    region = candidate;
+                    pastePos = clipboard.getOrigin().add(min.subtract(clipRegion.getMinimumPoint()));
+                    shift = pastePos.subtract(clipboard.getOrigin());
+                    origin = new Location(player.getWorld(), pastePos.getX(), pastePos.getY(), pastePos.getZ());
+                    break;
+                }
+            }
+            if (origin == null || region == null || shift == null) {
+                player.sendMessage("No free space for sphere");
+                return false;
+            }
+
             Map<BlockVector3, OreVariant> variants = replacePlaceholders(clipboard, premium);
             BlockVector3 goldVec = findGoldBlock(clipboard);
             BlockVector3 diamondVec = findDiamondBlock(clipboard);
 
-            Region clipRegion = clipboard.getRegion();
-            BlockVector3 pastePos = BlockVector3.at(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ());
-            BlockVector3 shift = pastePos.subtract(clipboard.getOrigin());
-            Region region = new CuboidRegion(
-                    clipRegion.getMinimumPoint().add(shift),
-                    clipRegion.getMaximumPoint().add(shift));
 
             loadRegionChunks(origin.getWorld(), region);
 
@@ -296,15 +336,6 @@ public class SphereManager {
         }
     }
 
-    private Location randomFarLocation(World world) {
-        int distance = 10000 + random.nextInt(10001);
-        double angle = random.nextDouble() * 2 * Math.PI;
-        int x = (int) (Math.cos(angle) * distance);
-        int z = (int) (Math.sin(angle) * distance);
-        int y = world.getMaxHeight() / 2;
-        return new Location(world, x, y, z);
-    }
-
     private void loadRegionChunks(World world, Region region) {
         int minX = region.getMinimumPoint().getBlockX() >> 4;
         int minZ = region.getMinimumPoint().getBlockZ() >> 4;
@@ -315,6 +346,19 @@ public class SphereManager {
                 world.getChunkAt(x, z);
             }
         }
+    }
+
+    private boolean intersects(Region a, Region b, int padding) {
+        BlockVector3 aMin = a.getMinimumPoint().subtract(padding, padding, padding);
+        BlockVector3 aMax = a.getMaximumPoint().add(padding, padding, padding);
+        BlockVector3 bMin = b.getMinimumPoint();
+        BlockVector3 bMax = b.getMaximumPoint();
+        return !(aMax.getBlockX() < bMin.getBlockX()
+                || aMin.getBlockX() > bMax.getBlockX()
+                || aMax.getBlockY() < bMin.getBlockY()
+                || aMin.getBlockY() > bMax.getBlockY()
+                || aMax.getBlockZ() < bMin.getBlockZ()
+                || aMin.getBlockZ() > bMax.getBlockZ());
     }
 
 
@@ -519,6 +563,7 @@ public class SphereManager {
             if (!previousModes.containsKey(player.getUniqueId())) {
                 previousModes.put(player.getUniqueId(), player.getGameMode());
                 player.setGameMode(GameMode.SURVIVAL);
+                player.sendTitle(ChatColor.GOLD + sphere.getType().getDisplayName(), "", 10, 70, 20);
                 if (debug) {
                     plugin.getLogger().info("[SphereManager] Set " + player.getName() + " to SURVIVAL inside sphere");
                 }

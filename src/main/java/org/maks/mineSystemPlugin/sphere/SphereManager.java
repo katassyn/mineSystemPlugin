@@ -307,10 +307,6 @@ public class SphereManager {
             } else {
                 teleport = origin.clone().add(0.5, 1, 0.5);
             }
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                player.teleport(teleport);
-                handleMove(player, teleport);
-            }, 40L);
             Location bossLoc = null;
             if (diamondVec != null) {
                 BlockVector3 d = diamondVec.add(shift);
@@ -319,12 +315,15 @@ public class SphereManager {
             Location finalBossLoc = bossLoc;
             Region finalRegion = region;
             Location finalOrigin = origin;
-            plugin.getLogger().info("[SphereManager] Scheduling mob spawn for " + schematic.getName());
+            String schemName = schematic.getName();
+            plugin.getLogger().info("[SphereManager] Scheduling teleport and mob spawn for " + schemName);
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                plugin.getLogger().info("[SphereManager] Running mob spawn for " + schematic.getName());
-                spawnConfiguredMobs(schematic.getName(), finalRegion, finalOrigin.getWorld(),
-                        player, finalBossLoc);
-            }, 20L);
+                player.teleport(teleport);
+                handleMove(player, teleport);
+                plugin.getLogger().info("[SphereManager] Running mob spawn for " + schemName);
+                spawnConfiguredMobs(schemName, finalRegion, finalOrigin.getWorld(), player, finalBossLoc);
+            }, 40L);
+
 
             if (schematic.getName().equals("special1.schem") || schematic.getName().equals("special2.schem")) {
                 int selectId = schematic.getName().equals("special1.schem") ? 61 : 62;

@@ -49,17 +49,27 @@ database:
 ```
 
 ### Mob spawns
-Define custom mobs tied to schematics:
+Define custom mobs tied to schematics. Entries marked `boss: true` appear on the
+schematic's diamond block, while other mobs spawn a few blocks in front of the
+player:
+
 
 ```yaml
 mobs:
   example.schem:
+    - name: ExampleBoss
+      mythic_id: boss_id
+      amount: 1
+      boss: true
+
     - name: ExampleMob
       mythic_id: example_id
       amount: 3
 ```
 
-Each entry is spawned when the schematic is pasted.
+Each entry is spawned when the schematic is pasted. Non‑boss mobs select a
+valid location in front of the player.
+
 
 ### Sell prices
 `config.yml` maps custom ore IDs to sell prices per world:

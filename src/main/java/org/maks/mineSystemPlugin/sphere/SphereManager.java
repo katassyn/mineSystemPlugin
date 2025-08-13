@@ -25,6 +25,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -308,15 +309,21 @@ public class SphereManager {
                 player.teleport(teleport);
                 handleMove(player, teleport);
             }, 40L);
-            int baseY = teleport.getBlockY();
+            Location bossLoc = null;
+            if (diamondVec != null) {
+                BlockVector3 d = diamondVec.add(shift);
+                bossLoc = new Location(origin.getWorld(), d.getX() + 0.5, d.getY() + 1, d.getZ() + 0.5);
+            }
+            Location finalBossLoc = bossLoc;
             Bukkit.getScheduler().runTaskLater(plugin,
-                    () -> spawnConfiguredMobs(schematic.getName(), region, origin.getWorld(), baseY), 20L);
+                    () -> spawnConfiguredMobs(schematic.getName(), region, origin.getWorld(),
+                            player, finalBossLoc), 20L);
 
             if (schematic.getName().equals("special1.schem") || schematic.getName().equals("special2.schem")) {
                 int selectId = schematic.getName().equals("special1.schem") ? 61 : 62;
-                if (diamondVec != null) {
-                    BlockVector3 d = diamondVec.add(shift);
-                    Location npcLoc = new Location(origin.getWorld(), d.getX() + 0.5, d.getY() + 1, d.getZ() + 0.5);
+                if (finalBossLoc != null) {
+                    Location npcLoc = finalBossLoc;
+
                     Bukkit.getScheduler().runTaskLater(plugin, () -> {
                         String worldName = origin.getWorld().getName();
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "npc select " + selectId);
@@ -497,7 +504,8 @@ public class SphereManager {
         }, 60L));
     }
 
-    private void spawnConfiguredMobs(String schematic, Region region, World world, int baseY) {
+    private void spawnConfiguredMobs(String schematic, Region region, World world,
+                                     Player player, Location bossLoc) {
         List<Map<?, ?>> entries = ((JavaPlugin) plugin).getConfig().getMapList("mobs." + schematic);
         for (Map<?, ?> entry : entries) {
             @SuppressWarnings("unchecked")
@@ -505,28 +513,33 @@ public class SphereManager {
             String mythic = (String) map.get("mythic_id");
             Number amtNum = (Number) map.getOrDefault("amount", 1);
             int amount = amtNum.intValue();
+            boolean boss = Boolean.TRUE.equals(map.get("boss"));
             for (int i = 0; i < amount; i++) {
-                Location loc = randomSpawnLocation(region, world, baseY);
+                Location loc = boss && bossLoc != null
+                        ? bossLoc
+                        : randomSpawnNearPlayer(region, world, player);
                 if (loc != null && mythic != null) {
                     String cmd = String.format("mm m spawn %s 1 %s,%.1f,%.1f,%.1f",
                             mythic, world.getName(), loc.getX(), loc.getY(), loc.getZ());
-
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
                 }
             }
         }
     }
 
-    private Location randomSpawnLocation(Region region, World world, int baseY) {
-        BlockVector3 min = region.getMinimumPoint();
-        BlockVector3 max = region.getMaximumPoint();
+    private Location randomSpawnNearPlayer(Region region, World world, Player player) {
+        Location base = player.getLocation();
+        Vector dir = base.getDirection().setY(0).normalize();
         for (int i = 0; i < 40; i++) {
-            int x = min.getBlockX() + random.nextInt(max.getBlockX() - min.getBlockX() + 1);
-            int z = min.getBlockZ() + random.nextInt(max.getBlockZ() - min.getBlockZ() + 1);
-            if (!region.contains(BlockVector3.at(x, baseY, z))) {
+            double dist = 2 + random.nextDouble() * 2; // 2-4 blocks ahead
+            double angle = (random.nextDouble() - 0.5) * Math.PI / 3; // +/-30 degrees
+            Vector offset = dir.clone().rotateAroundY(angle).multiply(dist);
+            int x = base.getBlockX() + (int) Math.round(offset.getX());
+            int z = base.getBlockZ() + (int) Math.round(offset.getZ());
+            int y = base.getBlockY();
+            if (!region.contains(BlockVector3.at(x, y, z))) {
                 continue;
             }
-            int y = baseY;
             Block block = world.getBlockAt(x, y, z);
             Block above = world.getBlockAt(x, y + 1, z);
             Block below = world.getBlockAt(x, y - 1, z);

@@ -16,6 +16,7 @@ public enum SphereType {
     SPECIAL_EVENT("SpecialEvent", 5, "Special Sphere"),
     CRYSTAL_DUST("CrystalDust", 5, "Crystal Dust Sphere");
 
+
     private static final Random RANDOM = new Random();
 
     private final String folderName;

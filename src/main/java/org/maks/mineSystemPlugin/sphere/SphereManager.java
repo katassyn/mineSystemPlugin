@@ -253,6 +253,7 @@ public class SphereManager {
             BlockVector3 goldVec = findGoldBlock(clipboard);
             BlockVector3 diamondVec = findDiamondBlock(clipboard);
 
+
             loadRegionChunks(origin.getWorld(), region);
 
             try (EditSession editSession = WorldEdit.getInstance()
@@ -322,6 +323,7 @@ public class SphereManager {
                 int selectId = schematic.getName().equals("special1.schem") ? 61 : 62;
                 if (finalBossLoc != null) {
                     Location npcLoc = finalBossLoc;
+
                     Bukkit.getScheduler().runTaskLater(plugin, () -> {
                         String worldName = origin.getWorld().getName();
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "npc select " + selectId);
@@ -329,6 +331,7 @@ public class SphereManager {
                         String cmd = String.format(
                                 "npc moveto --world %s --x %.1f --y %.1f --z %.1f",
                                 worldName, npcLoc.getX(), npcLoc.getY(), npcLoc.getZ());
+
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
                     }, 60L);
                 }

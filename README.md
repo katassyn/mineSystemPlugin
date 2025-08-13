@@ -14,6 +14,7 @@ fight mobs or bosses, and earn configurable loot and currency.
 - Mob spawning that requires a solid ceiling to keep entities inside
 - Spheres spawn only within -753,-61,-1281 to -381,143,-1658 and never overlap, keeping the world size in check
 - Entering a sphere shows its type in a title
+
 - Stamina system with quest-based max stamina bonuses
 - Pickaxe repair/enchant commands using Crystal currency
 - Database-backed persistence for players, pickaxes, loot and schematics
@@ -52,6 +53,7 @@ Define custom mobs tied to schematics. Entries marked `boss: true` appear on the
 schematic's diamond block, while other mobs spawn a few blocks in front of the
 player:
 
+
 ```yaml
 mobs:
   example.schem:
@@ -59,6 +61,7 @@ mobs:
       mythic_id: boss_id
       amount: 1
       boss: true
+
     - name: ExampleMob
       mythic_id: example_id
       amount: 3
@@ -66,6 +69,7 @@ mobs:
 
 Each entry is spawned when the schematic is pasted. Non‑boss mobs select a
 valid location in front of the player.
+
 
 ### Sell prices
 `config.yml` maps custom ore IDs to sell prices per world:
@@ -85,6 +89,7 @@ Toggle various debug logs:
 debug:
   toolListener: false
 ```
+
 
 ## Sphere schematics
 Schematics live under `plugins/MineSystemPlugin/schematics/<Type>` where `<Type>`
@@ -141,6 +146,7 @@ Mining uses custom pickaxes tracked in the database. `/mine_repair` restores
 durability using crystals and `/mine_enchant` applies crystal‑based enchants.
 Random bonus items may drop when a sphere is completed.
 
+
 ## Commands
 
 | Command | Description | Permission |
@@ -152,6 +158,7 @@ Random bonus items may drop when a sphere is completed.
 | `/spawnsphere` | Spawn a sphere for testing | `minesystemplugin.mine` |
 | `/specialloot <schematic>` | Edit loot for a specific schematic (extension optional) | `minesystemplugin.mine` |
 | `/specialloot test <schematic>` | Preview generated special loot (extension optional) | `minesystemplugin.mine` |
+
 | `/stamin` | Check your stamina | `minesystemplugin.mine` |
 
 The `minesystem.admin` permission bypasses mining restrictions.

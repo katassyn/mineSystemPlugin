@@ -55,6 +55,7 @@ public class SpecialLootManager {
                     inventory.setItem(slots.get(i), entry.item().clone());
                     break;
                 }
+
             }
         }
     }

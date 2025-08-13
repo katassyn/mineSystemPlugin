@@ -32,6 +32,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.configuration.ConfigurationSection;
 import org.maks.mineSystemPlugin.events.SphereCompleteEvent;
 import org.maks.mineSystemPlugin.LootManager;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
@@ -327,6 +328,7 @@ public class SphereManager {
                 spawnConfiguredMobs(schemName, finalRegion, finalOrigin.getWorld(), player, finalBossLoc);
             }, 40L);
 
+
             if (schematic.getName().equals("special1.schem") || schematic.getName().equals("special2.schem")) {
                 int selectId = schematic.getName().equals("special1.schem") ? 61 : 62;
                 if (finalBossLoc != null) {
@@ -530,6 +532,7 @@ public class SphereManager {
             }
         }
         plugin.getLogger().info("[SphereManager] Found " + entries.size() + " mob entries");
+
         for (Map<?, ?> entry : entries) {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) entry;
@@ -553,6 +556,7 @@ public class SphereManager {
                 } else {
                     loc = randomSpawnNearPlayer(region, world, player);
                 }
+
 
                 String locString = loc == null
                         ? "null"
@@ -583,6 +587,7 @@ public class SphereManager {
             for (int i = 1; i <= 6; i++) {
                 if (world.getBlockAt(x, y + i, z).getType() != Material.AIR) {
                     return false;
+
                 }
             }
             if (world.getBlockAt(x, y + 7, z).getType() == Material.AIR) {
@@ -602,6 +607,7 @@ public class SphereManager {
         Location base = player.getLocation();
         for (int i = 0; i < 40; i++) {
             double dist = 5 + random.nextDouble() * 3; // 5-8 blocks around
+
             double angle = random.nextDouble() * Math.PI * 2; // full circle
             Vector offset = new Vector(Math.cos(angle), 0, Math.sin(angle)).multiply(dist);
             int x = base.getBlockX() + (int) Math.round(offset.getX());
@@ -611,6 +617,7 @@ public class SphereManager {
                 continue;
             }
             if (isValidSpawnLocation(world, x, y, z, player)) {
+
                 return new Location(world, x + 0.5, y, z + 0.5);
             }
         }
@@ -630,6 +637,7 @@ public class SphereManager {
                 continue;
             }
             if (isValidSpawnLocation(world, x, y, z, player)) {
+
                 return new Location(world, x + 0.5, y, z + 0.5);
             }
         }

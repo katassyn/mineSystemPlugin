@@ -1,5 +1,9 @@
 mobs:
   example.schem:
+    - name: ExampleBoss
+      mythic_id: boss_id
+      amount: 1
+      boss: true
     - name: ExampleMob
       mythic_id: example_id
       amount: 3

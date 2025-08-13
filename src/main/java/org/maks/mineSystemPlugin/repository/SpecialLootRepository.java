@@ -55,8 +55,9 @@ public class SpecialLootRepository {
                     del.setString(1, schematic);
                     del.executeUpdate();
                 }
+
                 try (PreparedStatement ps = con.prepareStatement(
-                        "INSERT INTO special_loot(schematic, item, chance) VALUES(?, ?, ?)");) {
+                        "INSERT INTO special_loot(schematic, item, chance) VALUES(?, ?, ?)")) {
                     for (SpecialLootEntry entry : items) {
                         ps.setString(1, schematic);
                         ps.setString(2, ItemSerializer.serialize(entry.item()));

@@ -13,12 +13,13 @@ Schematics are loaded from `plugins/MineSystemPlugin/schematics/<Type>` where
 - `Mob`
 - `Boss`
 - `SpecialEvent`
-- `Puzzle`
 - `CrystalDust`
 
-Files can have any name as long as they end with the `.schem` extension. The
-plugin randomly selects the sphere type based on configured weights and then
-chooses a random schematic from the corresponding folder.
+ Files can have any name as long as they end with the `.schem` extension. The
+ plugin randomly selects the sphere type based on configured weights and then
+ chooses a random schematic from the corresponding folder. If no schematics
+ exist for a given type, its weight is ignored so the remaining types fill the
+ entire probability range.
 
 ## Registering Event Listeners
 

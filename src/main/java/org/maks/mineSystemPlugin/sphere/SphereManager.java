@@ -509,7 +509,8 @@ public class SphereManager {
 
     private void spawnConfiguredMobs(String schematic, Region region, World world,
                                      Player player, Location bossLoc) {
-        List<Map<?, ?>> entries = ((JavaPlugin) plugin).getConfig().getMapList("mobs." + schematic);
+        String key = "mobs." + schematic.replace(".", "\\.");
+        List<Map<?, ?>> entries = ((JavaPlugin) plugin).getConfig().getMapList(key);
         for (Map<?, ?> entry : entries) {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) entry;

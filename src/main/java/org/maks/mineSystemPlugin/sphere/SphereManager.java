@@ -32,6 +32,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.configuration.ConfigurationSection;
 import org.maks.mineSystemPlugin.events.SphereCompleteEvent;
 import org.maks.mineSystemPlugin.LootManager;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
@@ -327,6 +328,7 @@ public class SphereManager {
                 spawnConfiguredMobs(schemName, finalRegion, finalOrigin.getWorld(), player, finalBossLoc);
             }, 40L);
 
+
             if (schematic.getName().equals("special1.schem") || schematic.getName().equals("special2.schem")) {
                 int selectId = schematic.getName().equals("special1.schem") ? 61 : 62;
                 if (finalBossLoc != null) {
@@ -530,6 +532,7 @@ public class SphereManager {
             }
         }
         plugin.getLogger().info("[SphereManager] Found " + entries.size() + " mob entries");
+
         for (Map<?, ?> entry : entries) {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) entry;
@@ -538,6 +541,7 @@ public class SphereManager {
             int amount = amtNum.intValue();
             Object bossObj = map.get("boss");
             boolean boss = bossObj != null && Boolean.parseBoolean(String.valueOf(bossObj));
+
             plugin.getLogger().info("[SphereManager] Spawning " + amount + " of " + mythic + (boss ? " (boss)" : ""));
             for (int i = 0; i < amount; i++) {
                 Location loc;
@@ -547,6 +551,7 @@ public class SphereManager {
                         continue;
                     }
                     if (!isValidSpawnLocation(world, bossLoc.getBlockX(), bossLoc.getBlockY(), bossLoc.getBlockZ(), null, Material.DIAMOND_BLOCK)) {
+
                         plugin.getLogger().warning("[SphereManager] Boss location blocked, skipping spawn of " + mythic);
                         continue;
                     }
@@ -571,6 +576,7 @@ public class SphereManager {
     }
 
     private boolean isValidSpawnLocation(World world, int x, int y, int z, Player player, Material requiredBelow) {
+
         Block block = world.getBlockAt(x, y, z);
         if (block.getType() != Material.AIR) {
             return false;
@@ -588,6 +594,7 @@ public class SphereManager {
         if (world.getBlockAt(x, y + clearance + 1, z).getType() == Material.AIR) {
             return false;
         }
+
         if (player != null) {
             Location eye = player.getEyeLocation();
             Location target = new Location(world, x + 0.5, y, z + 0.5);
@@ -600,6 +607,7 @@ public class SphereManager {
     }
 
     private Location findSpawnInColumn(int x, int z, Region region, World world, Player player, Material requiredBelow) {
+
         int minY = region.getMinimumPoint().getBlockY();
         int maxY = region.getMaximumPoint().getBlockY();
         for (int y = maxY; y >= minY; y--) {
@@ -607,6 +615,7 @@ public class SphereManager {
                 continue;
             }
             if (isValidSpawnLocation(world, x, y, z, player, requiredBelow)) {
+
                 return new Location(world, x + 0.5, y, z + 0.5);
             }
         }
@@ -617,6 +626,7 @@ public class SphereManager {
         Location base = player.getLocation();
         for (int i = 0; i < 40; i++) {
             double dist = 5 + random.nextDouble() * 3; // 5-8 blocks around
+
             double angle = random.nextDouble() * Math.PI * 2; // full circle
             Vector offset = new Vector(Math.cos(angle), 0, Math.sin(angle)).multiply(dist);
             int x = base.getBlockX() + (int) Math.round(offset.getX());
@@ -625,10 +635,12 @@ public class SphereManager {
             if (loc != null) {
                 return loc;
             }
+
         }
 
         int minX = region.getMinimumPoint().getBlockX();
         int maxX = region.getMaximumPoint().getBlockX();
+
         int minZ = region.getMinimumPoint().getBlockZ();
         int maxZ = region.getMaximumPoint().getBlockZ();
 
@@ -638,6 +650,7 @@ public class SphereManager {
             Location loc = findSpawnInColumn(x, z, region, world, player, requiredBelow);
             if (loc != null) {
                 return loc;
+
             }
         }
         return null;

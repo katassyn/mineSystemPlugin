@@ -261,8 +261,9 @@ public class SphereManager {
                 player.sendMessage(ChatColor.YELLOW + "Teleported to sphere at " + coords);
 
             }, 40L);
+            int baseY = teleport.getBlockY();
             Bukkit.getScheduler().runTaskLater(plugin,
-                    () -> spawnConfiguredMobs(schematic.getName(), region, origin.getWorld()), 20L);
+                    () -> spawnConfiguredMobs(schematic.getName(), region, origin.getWorld(), baseY), 20L);
             return true;
         } catch (IOException | WorldEditException e) {
             player.sendMessage("Failed to create sphere");
@@ -415,7 +416,7 @@ public class SphereManager {
         }, 60L));
     }
 
-    private void spawnConfiguredMobs(String schematic, Region region, World world) {
+    private void spawnConfiguredMobs(String schematic, Region region, World world, int baseY) {
         List<Map<?, ?>> entries = ((JavaPlugin) plugin).getConfig().getMapList("mobs." + schematic);
         for (Map<?, ?> entry : entries) {
             @SuppressWarnings("unchecked")
@@ -424,9 +425,9 @@ public class SphereManager {
             Number amtNum = (Number) map.getOrDefault("amount", 1);
             int amount = amtNum.intValue();
             for (int i = 0; i < amount; i++) {
-                Location loc = randomSpawnLocation(region, world);
+                Location loc = randomSpawnLocation(region, world, baseY);
                 if (loc != null && mythic != null) {
-                    String cmd = String.format("mythicmobs spawn %s %s %.1f %.1f %.1f", mythic,
+                    String cmd = String.format("mm spawn %s %s %.1f %.1f %.1f", mythic,
                             world.getName(), loc.getX(), loc.getY(), loc.getZ());
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
                 }
@@ -434,13 +435,16 @@ public class SphereManager {
         }
     }
 
-    private Location randomSpawnLocation(Region region, World world) {
+    private Location randomSpawnLocation(Region region, World world, int baseY) {
         BlockVector3 min = region.getMinimumPoint();
         BlockVector3 max = region.getMaximumPoint();
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 40; i++) {
             int x = min.getBlockX() + random.nextInt(max.getBlockX() - min.getBlockX() + 1);
-            int y = min.getBlockY() + random.nextInt(max.getBlockY() - min.getBlockY() + 1);
             int z = min.getBlockZ() + random.nextInt(max.getBlockZ() - min.getBlockZ() + 1);
+            if (!region.contains(BlockVector3.at(x, baseY, z))) {
+                continue;
+            }
+            int y = baseY;
             Block block = world.getBlockAt(x, y, z);
             Block above = world.getBlockAt(x, y + 1, z);
             Block below = world.getBlockAt(x, y - 1, z);

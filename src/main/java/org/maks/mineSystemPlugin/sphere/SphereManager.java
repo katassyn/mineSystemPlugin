@@ -30,6 +30,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.configuration.ConfigurationSection;
 import org.maks.mineSystemPlugin.events.SphereCompleteEvent;
 import org.maks.mineSystemPlugin.LootManager;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
@@ -253,6 +254,7 @@ public class SphereManager {
             BlockVector3 goldVec = findGoldBlock(clipboard);
 
 
+
             loadRegionChunks(origin.getWorld(), region);
 
             try (EditSession editSession = WorldEdit.getInstance()
@@ -304,6 +306,7 @@ public class SphereManager {
             } else {
                 teleport = origin.clone().add(0.5, 1, 0.5);
             }
+
             Region finalRegion = region;
             Location finalOrigin = origin;
             String schemName = schematic.getName();
@@ -314,6 +317,7 @@ public class SphereManager {
                 plugin.getLogger().info("[SphereManager] Running mob spawn for " + schemName);
                 spawnConfiguredMobs(schemName, finalRegion, finalOrigin.getWorld(), player);
             }, 40L);
+
 
             if (schematic.getName().equals("special1.schem") || schematic.getName().equals("special2.schem")) {
                 int selectId = schematic.getName().equals("special1.schem") ? 61 : 62;
@@ -493,6 +497,7 @@ public class SphereManager {
 
     private void spawnConfiguredMobs(String schematic, Region region, World world,
                                      Player player) {
+
         String key = "mobs." + schematic.replace(".", "\\.");
         plugin.getLogger().info("[SphereManager] Loading mob config at key: " + key);
         List<Map<?, ?>> entries = ((JavaPlugin) plugin).getConfig().getMapList(key);
@@ -513,6 +518,7 @@ public class SphereManager {
         if (bossLoc == null) {
             plugin.getLogger().warning("[SphereManager] Diamond block not found at player level; boss will not spawn");
         }
+
         for (Map<?, ?> entry : entries) {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) entry;
@@ -533,6 +539,7 @@ public class SphereManager {
                 } else {
                     loc = randomSpawnInRegion(region, world, playerY);
                 }
+
                 String locString = loc == null
                         ? "null"
                         : String.format("%s,%.1f,%.1f,%.1f", world.getName(),
@@ -550,10 +557,12 @@ public class SphereManager {
 
     private Location randomSpawnInRegion(Region region, World world, int playerY) {
         int groundY = playerY - 1;
+
         int minX = region.getMinimumPoint().getBlockX();
         int maxX = region.getMaximumPoint().getBlockX();
         int minZ = region.getMinimumPoint().getBlockZ();
         int maxZ = region.getMaximumPoint().getBlockZ();
+
 
         for (int attempt = 0; attempt < 100; attempt++) {
             int x = random.nextInt(maxX - minX + 1) + minX;
@@ -585,6 +594,7 @@ public class SphereManager {
                 if (ground.getType() == Material.DIAMOND_BLOCK && space.getType() == Material.AIR) {
                     return new Location(world, x + 0.5, groundY + 1, z + 0.5);
                 }
+
             }
         }
         return null;

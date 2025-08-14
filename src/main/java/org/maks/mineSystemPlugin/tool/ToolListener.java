@@ -110,15 +110,6 @@ public class ToolListener implements Listener {
             }
         }
 
-        if (debug) {
-            int[] before = CustomTool.getDurability(tool, plugin);
-            if (before != null) {
-                plugin.getLogger().info(
-                    "[ToolListener] Durability before hit: " + before[0] + "/" + before[1]);
-            } else {
-                plugin.getLogger().info("[ToolListener] Durability data missing before hit");
-            }
-        }
 
         boolean broken = CustomTool.damage(tool, plugin);
 
@@ -157,7 +148,8 @@ public class ToolListener implements Listener {
             return false;
         }
         var canDestroy = meta.getCanDestroy();
-        return canDestroy == null || canDestroy.isEmpty() || canDestroy.contains(block.getType());
+        return canDestroy != null && canDestroy.contains(block.getType());
+
     }
 
 }

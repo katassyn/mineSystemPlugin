@@ -80,37 +80,53 @@ public final class CustomTool {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
 
+        // Only treat the item as a plugin tool if it already carries the
+        // formatted durability lore line. Vanilla tools should remain
+        // untouched so they cannot bypass sphere restrictions.
+        List<String> lore = meta.getLore();
+        boolean hasDurabilityLore = lore != null && lore.stream()
+                .map(ChatColor::stripColor)
+                .filter(l -> l != null)
+                .anyMatch(l -> l.startsWith("Durability:"));
+        if (!hasDurabilityLore) {
+            return; // not a custom tool managed by this plugin
+        }
+
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
 
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         NamespacedKey maxKey = new NamespacedKey(plugin, "max_durability");
         NamespacedKey curKey = new NamespacedKey(plugin, "durability");
+        NamespacedKey markerKey = new NamespacedKey(plugin, "custom_tool");
         Integer max = pdc.get(maxKey, PersistentDataType.INTEGER);
         Integer cur = pdc.get(curKey, PersistentDataType.INTEGER);
-        if (max != null && cur != null) {
-            item.setItemMeta(meta);
-            return; // already initialised
+
+        // mark item as plugin tool if not already
+        if (!pdc.has(markerKey, PersistentDataType.BYTE)) {
+            pdc.set(markerKey, PersistentDataType.BYTE, (byte) 1);
         }
 
-        ToolMaterial material = ToolMaterial.fromMaterial(item.getType());
-        if (material == null) {
-            item.setItemMeta(meta);
-            return;
-        }
-        int value = material.getMaxDurability();
-        pdc.set(maxKey, PersistentDataType.INTEGER, value);
-        pdc.set(curKey, PersistentDataType.INTEGER, value);
+        // initialise missing durability data
+        if (max == null || cur == null) {
+            ToolMaterial material = ToolMaterial.fromMaterial(item.getType());
+            if (material == null) {
+                item.setItemMeta(meta);
+                return;
+            }
+            int value = material.getMaxDurability();
+            pdc.set(maxKey, PersistentDataType.INTEGER, value);
+            pdc.set(curKey, PersistentDataType.INTEGER, value);
 
-        List<String> lore = meta.getLore();
-        if (lore == null) lore = new ArrayList<>();
-        int index = findDurabilityIndex(lore);
-        String formatted = formatDurability(value, value);
-        if (index == -1) {
-            lore.add(formatted);
-        } else {
-            lore.set(index, formatted);
+            if (lore == null) lore = new ArrayList<>();
+            int index = findDurabilityIndex(lore);
+            String formatted = formatDurability(value, value);
+            if (index == -1) {
+                lore.add(formatted);
+            } else {
+                lore.set(index, formatted);
+            }
+            meta.setLore(lore);
         }
-        meta.setLore(lore);
 
         // preserve CanDestroy values when reapplying meta
         var canDestroy = meta.getCanDestroy();
@@ -239,6 +255,26 @@ public final class CustomTool {
 
         item.setItemMeta(meta);
         return cur <= 0;
+    }
+
+    /**
+     * Returns the current and maximum durability stored on the item.
+     * Primarily used for debugging purposes.
+     *
+     * @return array of [current, max] durability or {@code null} if not present
+     */
+    public static int[] getDurability(ItemStack item, Plugin plugin) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return null;
+
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        NamespacedKey maxKey = new NamespacedKey(plugin, "max_durability");
+        NamespacedKey curKey = new NamespacedKey(plugin, "durability");
+
+        Integer max = pdc.get(maxKey, PersistentDataType.INTEGER);
+        Integer cur = pdc.get(curKey, PersistentDataType.INTEGER);
+        if (max == null || cur == null) return null;
+        return new int[] { cur, max };
     }
 
     public static int getDuplicateLevel(ItemStack item, Plugin plugin) {

@@ -58,6 +58,7 @@ public class ToolListener implements Listener {
                 plugin.getLogger().info("[ToolListener] Event was already cancelled before processing");
             }
             plugin.getLogger().info("[ToolListener] pluginTool=" + pluginTool + ", allowed=" + allowed + ", tool=" + tool.getType());
+
             ItemMeta meta = tool.getItemMeta();
             if (meta != null) {
                 PersistentDataContainer pdc = meta.getPersistentDataContainer();
@@ -109,6 +110,7 @@ public class ToolListener implements Listener {
             }
         }
 
+
         boolean broken = CustomTool.damage(tool, plugin);
 
         if (debug) {
@@ -145,6 +147,7 @@ public class ToolListener implements Listener {
         }
         var canDestroy = meta.getCanDestroy();
         return canDestroy != null && canDestroy.contains(block.getType());
+
     }
 
 }

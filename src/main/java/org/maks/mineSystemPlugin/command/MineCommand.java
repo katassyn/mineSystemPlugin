@@ -1,5 +1,6 @@
 package org.maks.mineSystemPlugin.command;
 
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -26,6 +27,11 @@ public class MineCommand implements CommandExecutor {
             sender.sendMessage("Only players may use this command.");
             return true;
         }
+        if (player.getLevel() < 70) {
+            player.sendMessage(ChatColor.RED + "You must be at least level 70!");
+            return true;
+        }
+
         MineMenu menu = new MineMenu(plugin, sphereManager);
         player.openInventory(menu.getInventory());
         return true;

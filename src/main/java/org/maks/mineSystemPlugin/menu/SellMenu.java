@@ -11,6 +11,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import java.util.Set;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -26,13 +27,19 @@ public class SellMenu implements InventoryHolder, Listener {
     private final Economy economy;
     private final Inventory inventory;
     private final ItemStack sellButton;
-    private static final int SELL_SLOT = 26;
+    private final ItemStack fillerItem;
+    private static final int SELL_SLOT = 22;
+    private static final Set<Integer> FILLER_SLOTS = Set.of(18, 19, 20, 21, 23, 24, 25, 26);
 
     public SellMenu(JavaPlugin plugin, Economy economy) {
         this.plugin = plugin;
         this.economy = economy;
         this.inventory = Bukkit.createInventory(this, 27, ChatColor.GOLD + "Sell Ores");
         this.sellButton = createSellButton();
+        this.fillerItem = createFillerItem();
+        for (int slot : FILLER_SLOTS) {
+            inventory.setItem(slot, fillerItem);
+        }
         inventory.setItem(SELL_SLOT, sellButton);
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
@@ -42,6 +49,16 @@ public class SellMenu implements InventoryHolder, Listener {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(ChatColor.GREEN + "Sell");
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
+    private ItemStack createFillerItem() {
+        ItemStack item = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(" ");
             item.setItemMeta(meta);
         }
         return item;
@@ -61,14 +78,15 @@ public class SellMenu implements InventoryHolder, Listener {
         if (event.getInventory().getHolder() != this) {
             return;
         }
-        if (event.getSlot() == SELL_SLOT && event.getClickedInventory() == inventory) {
-            event.setCancelled(true);
-            sellItems((Player) event.getWhoClicked());
-            return;
-        }
         ItemStack item = event.getCurrentItem();
         if (event.getClickedInventory() == inventory) {
-            if (event.getSlot() == SELL_SLOT) {
+            int slot = event.getSlot();
+            if (slot == SELL_SLOT) {
+                event.setCancelled(true);
+                sellItems((Player) event.getWhoClicked());
+                return;
+            }
+            if (FILLER_SLOTS.contains(slot)) {
                 event.setCancelled(true);
                 return;
             }
@@ -93,7 +111,8 @@ public class SellMenu implements InventoryHolder, Listener {
                 return;
             }
         }
-        if (event.getRawSlots().contains(SELL_SLOT)) {
+        if (event.getRawSlots().contains(SELL_SLOT) ||
+            event.getRawSlots().stream().anyMatch(FILLER_SLOTS::contains)) {
             event.setCancelled(true);
         }
     }
@@ -102,7 +121,7 @@ public class SellMenu implements InventoryHolder, Listener {
         double total = 0;
         String base = player.getWorld().getName();
         for (int i = 0; i < inventory.getSize(); i++) {
-            if (i == SELL_SLOT) {
+            if (i == SELL_SLOT || FILLER_SLOTS.contains(i)) {
                 continue;
             }
             ItemStack item = inventory.getItem(i);
@@ -139,7 +158,7 @@ public class SellMenu implements InventoryHolder, Listener {
         }
         Player player = (Player) event.getPlayer();
         for (int i = 0; i < inventory.getSize(); i++) {
-            if (i == SELL_SLOT) {
+            if (i == SELL_SLOT || FILLER_SLOTS.contains(i)) {
                 continue;
             }
             ItemStack item = inventory.getItem(i);

@@ -25,7 +25,6 @@ import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
-
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.ConfigurationSection;
@@ -253,10 +252,7 @@ public class SphereManager {
 
             Map<BlockVector3, OreVariant> variants = replacePlaceholders(clipboard, premium);
             BlockVector3 goldVec = findGoldBlock(clipboard);
-            BlockVector3 diamondVec = findDiamondBlock(clipboard);
-            if (diamondVec == null) {
-                plugin.getLogger().warning("[SphereManager] Diamond block not found in schematic; boss will not spawn");
-            }
+
 
 
             loadRegionChunks(origin.getWorld(), region);
@@ -310,12 +306,7 @@ public class SphereManager {
             } else {
                 teleport = origin.clone().add(0.5, 1, 0.5);
             }
-            Location bossLoc = null;
-            if (diamondVec != null) {
-                BlockVector3 d = diamondVec.add(shift);
-                bossLoc = new Location(origin.getWorld(), d.getX() + 0.5, d.getY() + 1, d.getZ() + 0.5);
-            }
-            Location finalBossLoc = bossLoc;
+
             Region finalRegion = region;
             Location finalOrigin = origin;
             String schemName = schematic.getName();
@@ -324,14 +315,15 @@ public class SphereManager {
                 player.teleport(teleport);
                 handleMove(player, teleport);
                 plugin.getLogger().info("[SphereManager] Running mob spawn for " + schemName);
-                spawnConfiguredMobs(schemName, finalRegion, finalOrigin.getWorld(), player, finalBossLoc);
+                spawnConfiguredMobs(schemName, finalRegion, finalOrigin.getWorld(), player);
             }, 40L);
 
 
             if (schematic.getName().equals("special1.schem") || schematic.getName().equals("special2.schem")) {
                 int selectId = schematic.getName().equals("special1.schem") ? 61 : 62;
-                if (finalBossLoc != null) {
-                    Location npcLoc = finalBossLoc;
+                Location bossLoc = findDiamondBlockAtLevel(region, origin.getWorld(), teleport.getBlockY() - 1);
+                if (bossLoc != null) {
+                    Location npcLoc = bossLoc;
 
                     Location finalOrigin1 = origin;
                     Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -400,17 +392,6 @@ public class SphereManager {
         for (BlockVector3 vec : region) {
             BlockState state = clipboard.getBlock(vec);
             if (state.getBlockType().getId().equals("minecraft:gold_block")) {
-                return vec;
-            }
-        }
-        return null;
-    }
-
-    private BlockVector3 findDiamondBlock(Clipboard clipboard) {
-        Region region = clipboard.getRegion();
-        for (BlockVector3 vec : region) {
-            BlockState state = clipboard.getBlock(vec);
-            if (state.getBlockType().getId().equals("minecraft:diamond_block")) {
                 return vec;
             }
         }
@@ -515,7 +496,8 @@ public class SphereManager {
     }
 
     private void spawnConfiguredMobs(String schematic, Region region, World world,
-                                     Player player, Location bossLoc) {
+                                     Player player) {
+
         String key = "mobs." + schematic.replace(".", "\\.");
         plugin.getLogger().info("[SphereManager] Loading mob config at key: " + key);
         List<Map<?, ?>> entries = ((JavaPlugin) plugin).getConfig().getMapList(key);
@@ -531,6 +513,11 @@ public class SphereManager {
             }
         }
         plugin.getLogger().info("[SphereManager] Found " + entries.size() + " mob entries");
+        int playerY = player.getLocation().getBlockY();
+        Location bossLoc = findDiamondBlockAtLevel(region, world, playerY - 1);
+        if (bossLoc == null) {
+            plugin.getLogger().warning("[SphereManager] Diamond block not found at player level; boss will not spawn");
+        }
 
         for (Map<?, ?> entry : entries) {
             @SuppressWarnings("unchecked")
@@ -542,13 +529,15 @@ public class SphereManager {
             boolean boss = bossObj != null && Boolean.parseBoolean(String.valueOf(bossObj));
             plugin.getLogger().info("[SphereManager] Spawning " + amount + " of " + mythic + (boss ? " (boss)" : ""));
             for (int i = 0; i < amount; i++) {
-                Location loc = boss && bossLoc != null
-                        ? bossLoc
-                        : randomSpawnInRegion(region, world);
-
-                if (boss && bossLoc == null) {
-                    plugin.getLogger().warning("[SphereManager] Boss location missing; using random region spawn");
-
+                Location loc;
+                if (boss) {
+                    if (bossLoc == null) {
+                        plugin.getLogger().warning("[SphereManager] Boss location missing; skipping spawn");
+                        continue;
+                    }
+                    loc = bossLoc;
+                } else {
+                    loc = randomSpawnInRegion(region, world, playerY);
                 }
 
                 String locString = loc == null
@@ -566,25 +555,44 @@ public class SphereManager {
         }
     }
 
-    private Location randomSpawnInRegion(Region region, World world) {
+    private Location randomSpawnInRegion(Region region, World world, int playerY) {
+        int groundY = playerY - 1;
+
         int minX = region.getMinimumPoint().getBlockX();
         int maxX = region.getMaximumPoint().getBlockX();
         int minZ = region.getMinimumPoint().getBlockZ();
         int maxZ = region.getMaximumPoint().getBlockZ();
-        int minY = region.getMinimumPoint().getBlockY();
-        int maxY = region.getMaximumPoint().getBlockY();
+
 
         for (int attempt = 0; attempt < 100; attempt++) {
             int x = random.nextInt(maxX - minX + 1) + minX;
             int z = random.nextInt(maxZ - minZ + 1) + minZ;
-            for (int y = maxY; y >= minY; y--) {
-                if (!region.contains(BlockVector3.at(x, y, z))) {
+            if (!region.contains(BlockVector3.at(x, groundY, z))) {
+                continue;
+            }
+            Block ground = world.getBlockAt(x, groundY, z);
+            Block space = world.getBlockAt(x, playerY, z);
+            if (ground.getType().isSolid() && space.getType() == Material.AIR) {
+                return new Location(world, x + 0.5, playerY, z + 0.5);
+            }
+        }
+        return null;
+    }
+
+    private Location findDiamondBlockAtLevel(Region region, World world, int groundY) {
+        int minX = region.getMinimumPoint().getBlockX();
+        int maxX = region.getMaximumPoint().getBlockX();
+        int minZ = region.getMinimumPoint().getBlockZ();
+        int maxZ = region.getMaximumPoint().getBlockZ();
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                if (!region.contains(BlockVector3.at(x, groundY, z))) {
                     continue;
                 }
-                Block ground = world.getBlockAt(x, y, z);
-                Block space = world.getBlockAt(x, y + 1, z);
-                if (ground.getType().isSolid() && space.getType() == Material.AIR) {
-                    return new Location(world, x + 0.5, y + 1, z + 0.5);
+                Block ground = world.getBlockAt(x, groundY, z);
+                Block space = world.getBlockAt(x, groundY + 1, z);
+                if (ground.getType() == Material.DIAMOND_BLOCK && space.getType() == Material.AIR) {
+                    return new Location(world, x + 0.5, groundY + 1, z + 0.5);
                 }
 
             }

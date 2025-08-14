@@ -12,6 +12,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
 
@@ -52,6 +53,14 @@ public class ToolListener implements Listener {
             if (wasCancelled) {
                 plugin.getLogger().info("[ToolListener] Event was already cancelled before processing");
             }
+            plugin.getLogger().info("[ToolListener] pluginTool=" + pluginTool + ", tool=" + tool.getType());
+            ItemMeta meta = tool.getItemMeta();
+            if (meta != null) {
+                PersistentDataContainer pdc = meta.getPersistentDataContainer();
+                plugin.getLogger().info(
+                    "[ToolListener] hasCustomToolKey=" + pdc.has(toolKey, PersistentDataType.BYTE));
+                plugin.getLogger().info("[ToolListener] canDestroy=" + meta.getCanDestroy());
+            }
         }
 
         // restrict breaking inside spheres unless allowed
@@ -87,7 +96,28 @@ public class ToolListener implements Listener {
         // durability handling
         CustomTool.ensureDurability(tool, plugin);
 
+        if (debug) {
+            int[] before = CustomTool.getDurability(tool, plugin);
+            if (before != null) {
+                plugin.getLogger().info(
+                    "[ToolListener] Durability before hit: " + before[0] + "/" + before[1]);
+            } else {
+                plugin.getLogger().info("[ToolListener] Durability data missing before hit");
+            }
+        }
+
         boolean broken = CustomTool.damage(tool, plugin);
+
+        if (debug) {
+            int[] after = CustomTool.getDurability(tool, plugin);
+            if (after != null) {
+                plugin.getLogger().info(
+                    "[ToolListener] Durability after hit: " + after[0] + "/" + after[1]);
+            } else {
+                plugin.getLogger().info("[ToolListener] Durability data missing after hit");
+            }
+            plugin.getLogger().info("[ToolListener] Broken after hit: " + broken);
+        }
         if (broken) {
             player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
         } else {

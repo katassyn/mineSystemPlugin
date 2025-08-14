@@ -106,6 +106,7 @@ public final class CustomTool {
             pdc.set(markerKey, PersistentDataType.BYTE, (byte) 1);
         }
 
+
         // initialise missing durability data
         if (max == null || cur == null) {
             ToolMaterial material = ToolMaterial.fromMaterial(item.getType());

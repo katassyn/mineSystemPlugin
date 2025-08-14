@@ -321,7 +321,9 @@ public class SphereManager {
 
             if (schematic.getName().equals("special1.schem") || schematic.getName().equals("special2.schem")) {
                 int selectId = schematic.getName().equals("special1.schem") ? 61 : 62;
-                Location bossLoc = findDiamondBlockAtLevel(region, origin.getWorld(), teleport.getBlockY() - 1);
+                // Special sphere NPCs can appear above any diamond block in the sphere,
+                // not just at the player's ground level.
+                Location bossLoc = findDiamondBlock(region, origin.getWorld());
                 if (bossLoc != null) {
                     plugin.getLogger().info("[SphereManager] Spawning NPC " + selectId + " at " + bossLoc);
                     Location npcLoc = bossLoc;
@@ -603,6 +605,36 @@ public class SphereManager {
             }
         }
         plugin.getLogger().info("[SphereManager] No diamond block located at Y=" + groundY);
+        return null;
+    }
+
+    /**
+     * Searches the entire region for a diamond block and returns a location one
+     * block above it. Used for special sphere NPCs that can spawn at any height
+     * within the schematic.
+     */
+    private Location findDiamondBlock(Region region, World world) {
+        int minX = region.getMinimumPoint().getBlockX();
+        int maxX = region.getMaximumPoint().getBlockX();
+        int minY = region.getMinimumPoint().getBlockY();
+        int maxY = region.getMaximumPoint().getBlockY();
+        int minZ = region.getMinimumPoint().getBlockZ();
+        int maxZ = region.getMaximumPoint().getBlockZ();
+        for (int y = minY; y <= maxY; y++) {
+            for (int x = minX; x <= maxX; x++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    if (!region.contains(BlockVector3.at(x, y, z))) {
+                        continue;
+                    }
+                    Block ground = world.getBlockAt(x, y, z);
+                    if (ground.getType() == Material.DIAMOND_BLOCK) {
+                        return new Location(world, x + 0.5, y + 1, z + 0.5);
+                    }
+                }
+            }
+        }
+        plugin.getLogger().info("[SphereManager] No diamond block found anywhere in region");
+
         return null;
     }
 

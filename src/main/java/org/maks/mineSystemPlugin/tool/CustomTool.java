@@ -87,7 +87,8 @@ public final class CustomTool {
         boolean hasDurabilityLore = lore != null && lore.stream()
                 .map(ChatColor::stripColor)
                 .filter(l -> l != null)
-                .anyMatch(l -> l.startsWith("Durability:"));
+                .anyMatch(l -> l.trim().startsWith("Durability:"));
+
         if (!hasDurabilityLore) {
             return; // not a custom tool managed by this plugin
         }

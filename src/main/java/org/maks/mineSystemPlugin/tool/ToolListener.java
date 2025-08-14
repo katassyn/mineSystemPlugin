@@ -27,7 +27,9 @@ public class ToolListener implements Listener {
 
     public ToolListener(MineSystemPlugin plugin) {
         this.plugin = plugin;
-        this.debug = plugin.getConfig().getBoolean("debug.toolListener", false);
+        // Always enable debug output so durability problems can be traced even if
+        // the configuration flag is missing or set incorrectly.
+        this.debug = true;
         this.toolKey = new NamespacedKey(plugin, "custom_tool");
     }
 
@@ -40,8 +42,12 @@ public class ToolListener implements Listener {
         Player player = event.getPlayer();
         ItemStack tool = player.getInventory().getItemInMainHand();
 
-        // initialise durability and marker metadata before any checks
+        // initialise durability and marker metadata before any checks and ensure
+        // the mutated ItemStack is written back to the inventory so further
+        // operations see the updated persistent data.
         CustomTool.ensureDurability(tool, plugin);
+        player.getInventory().setItemInMainHand(tool);
+
 
         boolean wasCancelled = event.isCancelled();
         Block block = event.getBlock();
@@ -125,6 +131,10 @@ public class ToolListener implements Listener {
         }
         if (broken) {
             player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
+        } else {
+            // write back updated durability to the player's inventory
+            player.getInventory().setItemInMainHand(tool);
+
         }
         player.updateInventory();
         if (debug) {

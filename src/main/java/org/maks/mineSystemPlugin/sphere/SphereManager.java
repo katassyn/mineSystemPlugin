@@ -25,11 +25,13 @@ import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
+
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.configuration.ConfigurationSection;
 import org.maks.mineSystemPlugin.events.SphereCompleteEvent;
 import org.maks.mineSystemPlugin.LootManager;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
@@ -325,6 +327,7 @@ public class SphereManager {
                 spawnConfiguredMobs(schemName, finalRegion, finalOrigin.getWorld(), player, finalBossLoc);
             }, 40L);
 
+
             if (schematic.getName().equals("special1.schem") || schematic.getName().equals("special2.schem")) {
                 int selectId = schematic.getName().equals("special1.schem") ? 61 : 62;
                 if (finalBossLoc != null) {
@@ -528,6 +531,7 @@ public class SphereManager {
             }
         }
         plugin.getLogger().info("[SphereManager] Found " + entries.size() + " mob entries");
+
         for (Map<?, ?> entry : entries) {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) entry;
@@ -544,6 +548,7 @@ public class SphereManager {
 
                 if (boss && bossLoc == null) {
                     plugin.getLogger().warning("[SphereManager] Boss location missing; using random region spawn");
+
                 }
 
                 String locString = loc == null
@@ -581,6 +586,7 @@ public class SphereManager {
                 if (ground.getType().isSolid() && space.getType() == Material.AIR) {
                     return new Location(world, x + 0.5, y + 1, z + 0.5);
                 }
+
             }
         }
         return null;

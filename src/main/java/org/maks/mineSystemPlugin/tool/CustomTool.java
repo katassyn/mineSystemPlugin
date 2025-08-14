@@ -45,6 +45,7 @@ public final class CustomTool {
         }
 
         meta.displayName(Component.text(name));
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
 
         // base lore with durability line
         List<String> lore = new ArrayList<>();
@@ -79,17 +80,23 @@ public final class CustomTool {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
 
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         NamespacedKey maxKey = new NamespacedKey(plugin, "max_durability");
         NamespacedKey curKey = new NamespacedKey(plugin, "durability");
         Integer max = pdc.get(maxKey, PersistentDataType.INTEGER);
         Integer cur = pdc.get(curKey, PersistentDataType.INTEGER);
         if (max != null && cur != null) {
+            item.setItemMeta(meta);
             return; // already initialised
         }
 
         ToolMaterial material = ToolMaterial.fromMaterial(item.getType());
-        if (material == null) return;
+        if (material == null) {
+            item.setItemMeta(meta);
+            return;
+        }
         int value = material.getMaxDurability();
         pdc.set(maxKey, PersistentDataType.INTEGER, value);
         pdc.set(curKey, PersistentDataType.INTEGER, value);

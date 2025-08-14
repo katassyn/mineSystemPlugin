@@ -13,6 +13,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.permissions.PermissionAttachment;
 import org.maks.mineSystemPlugin.sphere.SphereManager;
@@ -45,6 +46,7 @@ public class MineMenu implements InventoryHolder, Listener {
         ItemMeta normalMeta = normal.getItemMeta();
         if (normalMeta != null) {
             normalMeta.setDisplayName(ChatColor.GRAY + "Regular Mine");
+            normalMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
             normal.setItemMeta(normalMeta);
         }
         inventory.setItem(12, normal);
@@ -53,6 +55,7 @@ public class MineMenu implements InventoryHolder, Listener {
         ItemMeta premiumMeta = premium.getItemMeta();
         if (premiumMeta != null) {
             premiumMeta.setDisplayName(ChatColor.AQUA + "Premium Mine");
+            premiumMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
             premium.setItemMeta(premiumMeta);
         }
         inventory.setItem(14, premium);

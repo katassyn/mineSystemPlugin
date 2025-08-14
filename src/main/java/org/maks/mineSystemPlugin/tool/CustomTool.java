@@ -241,6 +241,26 @@ public final class CustomTool {
         return cur <= 0;
     }
 
+    /**
+     * Returns the current and maximum durability stored on the item.
+     * Primarily used for debugging purposes.
+     *
+     * @return array of [current, max] durability or {@code null} if not present
+     */
+    public static int[] getDurability(ItemStack item, Plugin plugin) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return null;
+
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        NamespacedKey maxKey = new NamespacedKey(plugin, "max_durability");
+        NamespacedKey curKey = new NamespacedKey(plugin, "durability");
+
+        Integer max = pdc.get(maxKey, PersistentDataType.INTEGER);
+        Integer cur = pdc.get(curKey, PersistentDataType.INTEGER);
+        if (max == null || cur == null) return null;
+        return new int[] { cur, max };
+    }
+
     public static int getDuplicateLevel(ItemStack item, Plugin plugin) {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return 0;

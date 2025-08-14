@@ -12,6 +12,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
 
@@ -39,11 +40,15 @@ public class ToolListener implements Listener {
         Player player = event.getPlayer();
         ItemStack tool = player.getInventory().getItemInMainHand();
 
+        // initialise durability and marker metadata before any checks
+        CustomTool.ensureDurability(tool, plugin);
+
         boolean wasCancelled = event.isCancelled();
         Block block = event.getBlock();
         boolean insideSphere = plugin.getSphereManager().isInsideSphere(block.getLocation());
         boolean bypass = player.isOp() || player.hasPermission("minesystem.admin");
-        boolean pluginTool = canDestroy(tool, block);
+        boolean pluginTool = isPluginTool(tool);
+        boolean allowed = pluginTool && canDestroy(tool, block);
 
         if (debug) {
             plugin.getLogger().info(String.format(
@@ -52,10 +57,18 @@ public class ToolListener implements Listener {
             if (wasCancelled) {
                 plugin.getLogger().info("[ToolListener] Event was already cancelled before processing");
             }
+            plugin.getLogger().info("[ToolListener] pluginTool=" + pluginTool + ", allowed=" + allowed + ", tool=" + tool.getType());
+            ItemMeta meta = tool.getItemMeta();
+            if (meta != null) {
+                PersistentDataContainer pdc = meta.getPersistentDataContainer();
+                plugin.getLogger().info(
+                    "[ToolListener] hasCustomToolKey=" + pdc.has(toolKey, PersistentDataType.BYTE));
+                plugin.getLogger().info("[ToolListener] canDestroy=" + meta.getCanDestroy());
+            }
         }
 
         // restrict breaking inside spheres unless allowed
-        if (insideSphere && !bypass && !pluginTool) {
+        if (insideSphere && !bypass && !allowed) {
             event.setCancelled(true);
             if (debug) {
                 plugin.getLogger().info("[ToolListener] Cancelled: block not allowed inside sphere");
@@ -85,9 +98,29 @@ public class ToolListener implements Listener {
         }
 
         // durability handling
-        CustomTool.ensureDurability(tool, plugin);
+
+        if (debug) {
+            int[] before = CustomTool.getDurability(tool, plugin);
+            if (before != null) {
+                plugin.getLogger().info(
+                    "[ToolListener] Durability before hit: " + before[0] + "/" + before[1]);
+            } else {
+                plugin.getLogger().info("[ToolListener] Durability data missing before hit");
+            }
+        }
 
         boolean broken = CustomTool.damage(tool, plugin);
+
+        if (debug) {
+            int[] after = CustomTool.getDurability(tool, plugin);
+            if (after != null) {
+                plugin.getLogger().info(
+                    "[ToolListener] Durability after hit: " + after[0] + "/" + after[1]);
+            } else {
+                plugin.getLogger().info("[ToolListener] Durability data missing after hit");
+            }
+            plugin.getLogger().info("[ToolListener] Broken after hit: " + broken);
+        }
         if (broken) {
             player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
         } else {
@@ -99,23 +132,21 @@ public class ToolListener implements Listener {
         player.updateInventory();
     }
 
-    private boolean canDestroy(ItemStack tool, Block block) {
+    private boolean isPluginTool(ItemStack tool) {
         if (tool.getType() == Material.AIR || !tool.hasItemMeta()) {
-
             return false;
         }
         ItemMeta meta = tool.getItemMeta();
+        return meta.getPersistentDataContainer().has(toolKey, PersistentDataType.BYTE);
+    }
 
-        // Only allow tools created by this plugin
-        if (!meta.getPersistentDataContainer().has(toolKey, PersistentDataType.BYTE)) {
+    private boolean canDestroy(ItemStack tool, Block block) {
+        ItemMeta meta = tool.getItemMeta();
+        if (meta == null) {
             return false;
         }
-
         var canDestroy = meta.getCanDestroy();
-        if (canDestroy == null || canDestroy.isEmpty()) {
-            return false;
-        }
-        return canDestroy.contains(block.getType());
+        return canDestroy == null || canDestroy.isEmpty() || canDestroy.contains(block.getType());
     }
 
 }

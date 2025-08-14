@@ -25,8 +25,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
-import org.bukkit.FluidCollisionMode;
-import org.bukkit.util.Vector;
+
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.ConfigurationSection;
@@ -541,23 +540,15 @@ public class SphereManager {
             int amount = amtNum.intValue();
             Object bossObj = map.get("boss");
             boolean boss = bossObj != null && Boolean.parseBoolean(String.valueOf(bossObj));
-
             plugin.getLogger().info("[SphereManager] Spawning " + amount + " of " + mythic + (boss ? " (boss)" : ""));
             for (int i = 0; i < amount; i++) {
-                Location loc;
-                if (boss) {
-                    if (bossLoc == null) {
-                        plugin.getLogger().warning("[SphereManager] Boss location missing, skipping spawn of " + mythic);
-                        continue;
-                    }
-                    if (!isValidSpawnLocation(world, bossLoc.getBlockX(), bossLoc.getBlockY(), bossLoc.getBlockZ(), null, Material.DIAMOND_BLOCK)) {
+                Location loc = boss && bossLoc != null
+                        ? bossLoc
+                        : randomSpawnInRegion(region, world);
 
-                        plugin.getLogger().warning("[SphereManager] Boss location blocked, skipping spawn of " + mythic);
-                        continue;
-                    }
-                    loc = bossLoc;
-                } else {
-                    loc = randomSpawnNearPlayer(region, world, player, Material.ROOTED_DIRT);
+                if (boss && bossLoc == null) {
+                    plugin.getLogger().warning("[SphereManager] Boss location missing; using random region spawn");
+
                 }
 
                 String locString = loc == null
@@ -575,81 +566,26 @@ public class SphereManager {
         }
     }
 
-    private boolean isValidSpawnLocation(World world, int x, int y, int z, Player player, Material requiredBelow) {
-
-        Block block = world.getBlockAt(x, y, z);
-        if (block.getType() != Material.AIR) {
-            return false;
-        }
-        Block below = world.getBlockAt(x, y - 1, z);
-        if (below.getType() != requiredBelow) {
-            return false;
-        }
-        int clearance = requiredBelow == Material.DIAMOND_BLOCK ? 9 : 8;
-        for (int i = 1; i <= clearance; i++) {
-            if (world.getBlockAt(x, y + i, z).getType() != Material.AIR) {
-                return false;
-            }
-        }
-        if (world.getBlockAt(x, y + clearance + 1, z).getType() == Material.AIR) {
-            return false;
-        }
-
-        if (player != null) {
-            Location eye = player.getEyeLocation();
-            Location target = new Location(world, x + 0.5, y, z + 0.5);
-            Vector dir = target.toVector().subtract(eye.toVector());
-            if (world.rayTraceBlocks(eye, dir.normalize(), dir.length(), FluidCollisionMode.NEVER, true) != null) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private Location findSpawnInColumn(int x, int z, Region region, World world, Player player, Material requiredBelow) {
-
-        int minY = region.getMinimumPoint().getBlockY();
-        int maxY = region.getMaximumPoint().getBlockY();
-        for (int y = maxY; y >= minY; y--) {
-            if (!region.contains(BlockVector3.at(x, y, z))) {
-                continue;
-            }
-            if (isValidSpawnLocation(world, x, y, z, player, requiredBelow)) {
-
-                return new Location(world, x + 0.5, y, z + 0.5);
-            }
-        }
-        return null;
-    }
-
-    private Location randomSpawnNearPlayer(Region region, World world, Player player, Material requiredBelow) {
-        Location base = player.getLocation();
-        for (int i = 0; i < 40; i++) {
-            double dist = 5 + random.nextDouble() * 3; // 5-8 blocks around
-
-            double angle = random.nextDouble() * Math.PI * 2; // full circle
-            Vector offset = new Vector(Math.cos(angle), 0, Math.sin(angle)).multiply(dist);
-            int x = base.getBlockX() + (int) Math.round(offset.getX());
-            int z = base.getBlockZ() + (int) Math.round(offset.getZ());
-            Location loc = findSpawnInColumn(x, z, region, world, player, requiredBelow);
-            if (loc != null) {
-                return loc;
-            }
-
-        }
-
+    private Location randomSpawnInRegion(Region region, World world) {
         int minX = region.getMinimumPoint().getBlockX();
         int maxX = region.getMaximumPoint().getBlockX();
-
         int minZ = region.getMinimumPoint().getBlockZ();
         int maxZ = region.getMaximumPoint().getBlockZ();
+        int minY = region.getMinimumPoint().getBlockY();
+        int maxY = region.getMaximumPoint().getBlockY();
 
-        for (int i = 0; i < 80; i++) {
+        for (int attempt = 0; attempt < 100; attempt++) {
             int x = random.nextInt(maxX - minX + 1) + minX;
             int z = random.nextInt(maxZ - minZ + 1) + minZ;
-            Location loc = findSpawnInColumn(x, z, region, world, player, requiredBelow);
-            if (loc != null) {
-                return loc;
+            for (int y = maxY; y >= minY; y--) {
+                if (!region.contains(BlockVector3.at(x, y, z))) {
+                    continue;
+                }
+                Block ground = world.getBlockAt(x, y, z);
+                Block space = world.getBlockAt(x, y + 1, z);
+                if (ground.getType().isSolid() && space.getType() == Material.AIR) {
+                    return new Location(world, x + 0.5, y + 1, z + 0.5);
+                }
 
             }
         }

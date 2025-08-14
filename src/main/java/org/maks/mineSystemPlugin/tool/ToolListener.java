@@ -40,6 +40,9 @@ public class ToolListener implements Listener {
         Player player = event.getPlayer();
         ItemStack tool = player.getInventory().getItemInMainHand();
 
+        // initialise durability and marker metadata before any checks
+        CustomTool.ensureDurability(tool, plugin);
+
         boolean wasCancelled = event.isCancelled();
         Block block = event.getBlock();
         boolean insideSphere = plugin.getSphereManager().isInsideSphere(block.getLocation());
@@ -96,7 +99,16 @@ public class ToolListener implements Listener {
         }
 
         // durability handling
-        CustomTool.ensureDurability(tool, plugin);
+
+        if (debug) {
+            int[] before = CustomTool.getDurability(tool, plugin);
+            if (before != null) {
+                plugin.getLogger().info(
+                    "[ToolListener] Durability before hit: " + before[0] + "/" + before[1]);
+            } else {
+                plugin.getLogger().info("[ToolListener] Durability data missing before hit");
+            }
+        }
 
         if (debug) {
             int[] before = CustomTool.getDurability(tool, plugin);

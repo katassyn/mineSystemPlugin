@@ -85,18 +85,25 @@ public final class CustomTool {
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         NamespacedKey maxKey = new NamespacedKey(plugin, "max_durability");
         NamespacedKey curKey = new NamespacedKey(plugin, "durability");
+        NamespacedKey markerKey = new NamespacedKey(plugin, "custom_tool");
         Integer max = pdc.get(maxKey, PersistentDataType.INTEGER);
         Integer cur = pdc.get(curKey, PersistentDataType.INTEGER);
+
+        ToolMaterial material = ToolMaterial.fromMaterial(item.getType());
+        if (material != null && !pdc.has(markerKey, PersistentDataType.BYTE)) {
+            pdc.set(markerKey, PersistentDataType.BYTE, (byte) 1);
+        }
+
         if (max != null && cur != null) {
             item.setItemMeta(meta);
             return; // already initialised
         }
 
-        ToolMaterial material = ToolMaterial.fromMaterial(item.getType());
         if (material == null) {
             item.setItemMeta(meta);
             return;
         }
+
         int value = material.getMaxDurability();
         pdc.set(maxKey, PersistentDataType.INTEGER, value);
         pdc.set(curKey, PersistentDataType.INTEGER, value);

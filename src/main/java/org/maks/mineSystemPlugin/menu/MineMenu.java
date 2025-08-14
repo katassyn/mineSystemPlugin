@@ -29,7 +29,17 @@ public class MineMenu implements InventoryHolder, Listener {
     public MineMenu(JavaPlugin plugin, SphereManager sphereManager) {
         this.plugin = plugin;
         this.sphereManager = sphereManager;
-        this.inventory = Bukkit.createInventory(this, 9, ChatColor.DARK_AQUA + "Choose Mine");
+        this.inventory = Bukkit.createInventory(this, 27, ChatColor.DARK_AQUA + "Choose Mine");
+
+        ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemMeta fillerMeta = filler.getItemMeta();
+        if (fillerMeta != null) {
+            fillerMeta.setDisplayName(" ");
+            filler.setItemMeta(fillerMeta);
+        }
+        for (int i = 0; i < inventory.getSize(); i++) {
+            inventory.setItem(i, filler);
+        }
 
         ItemStack normal = new ItemStack(Material.STONE_PICKAXE);
         ItemMeta normalMeta = normal.getItemMeta();
@@ -37,7 +47,7 @@ public class MineMenu implements InventoryHolder, Listener {
             normalMeta.setDisplayName(ChatColor.GRAY + "Regular Mine");
             normal.setItemMeta(normalMeta);
         }
-        inventory.setItem(3, normal);
+        inventory.setItem(12, normal);
 
         ItemStack premium = new ItemStack(Material.DIAMOND_PICKAXE);
         ItemMeta premiumMeta = premium.getItemMeta();
@@ -45,7 +55,7 @@ public class MineMenu implements InventoryHolder, Listener {
             premiumMeta.setDisplayName(ChatColor.AQUA + "Premium Mine");
             premium.setItemMeta(premiumMeta);
         }
-        inventory.setItem(5, premium);
+        inventory.setItem(14, premium);
 
         ItemStack shop = new ItemStack(Material.EMERALD);
         ItemMeta shopMeta = shop.getItemMeta();
@@ -53,7 +63,7 @@ public class MineMenu implements InventoryHolder, Listener {
             shopMeta.setDisplayName(ChatColor.GREEN + "Mine Shop");
             shop.setItemMeta(shopMeta);
         }
-        inventory.setItem(1, shop);
+        inventory.setItem(10, shop);
 
         ItemStack sell = new ItemStack(Material.CHEST);
         ItemMeta sellMeta = sell.getItemMeta();
@@ -61,7 +71,7 @@ public class MineMenu implements InventoryHolder, Listener {
             sellMeta.setDisplayName(ChatColor.GOLD + "Sell Ores");
             sell.setItemMeta(sellMeta);
         }
-        inventory.setItem(7, sell);
+        inventory.setItem(16, sell);
 
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }

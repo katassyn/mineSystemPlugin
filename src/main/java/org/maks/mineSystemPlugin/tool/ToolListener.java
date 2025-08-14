@@ -55,6 +55,7 @@ public class ToolListener implements Listener {
                 plugin.getLogger().info("[ToolListener] Event was already cancelled before processing");
             }
             plugin.getLogger().info("[ToolListener] pluginTool=" + pluginTool + ", allowed=" + allowed + ", tool=" + tool.getType());
+
             ItemMeta meta = tool.getItemMeta();
             if (meta != null) {
                 PersistentDataContainer pdc = meta.getPersistentDataContainer();

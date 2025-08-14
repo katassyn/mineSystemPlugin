@@ -58,6 +58,7 @@ public class ToolListener implements Listener {
                 plugin.getLogger().info("[ToolListener] Event was already cancelled before processing");
             }
             plugin.getLogger().info("[ToolListener] pluginTool=" + pluginTool + ", allowed=" + allowed + ", tool=" + tool.getType());
+
             ItemMeta meta = tool.getItemMeta();
             if (meta != null) {
                 PersistentDataContainer pdc = meta.getPersistentDataContainer();
@@ -98,6 +99,16 @@ public class ToolListener implements Listener {
         }
 
         // durability handling
+
+        if (debug) {
+            int[] before = CustomTool.getDurability(tool, plugin);
+            if (before != null) {
+                plugin.getLogger().info(
+                    "[ToolListener] Durability before hit: " + before[0] + "/" + before[1]);
+            } else {
+                plugin.getLogger().info("[ToolListener] Durability data missing before hit");
+            }
+        }
 
         if (debug) {
             int[] before = CustomTool.getDurability(tool, plugin);

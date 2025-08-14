@@ -88,6 +88,7 @@ public final class CustomTool {
                 .map(ChatColor::stripColor)
                 .filter(l -> l != null)
                 .anyMatch(l -> l.trim().startsWith("Durability:"));
+
         if (!hasDurabilityLore) {
             return; // not a custom tool managed by this plugin
         }
@@ -108,6 +109,7 @@ public final class CustomTool {
         if (!pdc.has(markerKey, PersistentDataType.BYTE)) {
             pdc.set(markerKey, PersistentDataType.BYTE, (byte) 1);
         }
+
 
         // initialise missing durability data
         if (max == null || cur == null) {

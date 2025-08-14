@@ -48,6 +48,7 @@ public class ToolListener implements Listener {
         CustomTool.ensureDurability(tool, plugin);
         player.getInventory().setItemInMainHand(tool);
 
+
         boolean wasCancelled = event.isCancelled();
         Block block = event.getBlock();
         boolean insideSphere = plugin.getSphereManager().isInsideSphere(block.getLocation());
@@ -63,6 +64,7 @@ public class ToolListener implements Listener {
                 plugin.getLogger().info("[ToolListener] Event was already cancelled before processing");
             }
             plugin.getLogger().info("[ToolListener] pluginTool=" + pluginTool + ", allowed=" + allowed + ", tool=" + tool.getType());
+
             ItemMeta meta = tool.getItemMeta();
             if (meta != null) {
                 PersistentDataContainer pdc = meta.getPersistentDataContainer();
@@ -114,6 +116,7 @@ public class ToolListener implements Listener {
             }
         }
 
+
         boolean broken = CustomTool.damage(tool, plugin);
 
         if (debug) {
@@ -131,6 +134,7 @@ public class ToolListener implements Listener {
         } else {
             // write back updated durability to the player's inventory
             player.getInventory().setItemInMainHand(tool);
+
         }
         player.updateInventory();
         if (debug) {
@@ -153,6 +157,7 @@ public class ToolListener implements Listener {
         }
         var canDestroy = meta.getCanDestroy();
         return canDestroy != null && canDestroy.contains(block.getType());
+
     }
 
 }

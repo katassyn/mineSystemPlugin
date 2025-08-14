@@ -634,6 +634,7 @@ public class SphereManager {
             }
         }
         plugin.getLogger().info("[SphereManager] No diamond block found anywhere in region");
+
         return null;
     }
 

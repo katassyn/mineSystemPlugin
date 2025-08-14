@@ -44,7 +44,8 @@ public class ToolListener implements Listener {
         Block block = event.getBlock();
         boolean insideSphere = plugin.getSphereManager().isInsideSphere(block.getLocation());
         boolean bypass = player.isOp() || player.hasPermission("minesystem.admin");
-        boolean pluginTool = canDestroy(tool, block);
+        boolean pluginTool = isPluginTool(tool);
+        boolean allowed = pluginTool && canDestroy(tool, block);
 
         if (debug) {
             plugin.getLogger().info(String.format(
@@ -53,7 +54,8 @@ public class ToolListener implements Listener {
             if (wasCancelled) {
                 plugin.getLogger().info("[ToolListener] Event was already cancelled before processing");
             }
-            plugin.getLogger().info("[ToolListener] pluginTool=" + pluginTool + ", tool=" + tool.getType());
+            plugin.getLogger().info("[ToolListener] pluginTool=" + pluginTool + ", allowed=" + allowed + ", tool=" + tool.getType());
+
             ItemMeta meta = tool.getItemMeta();
             if (meta != null) {
                 PersistentDataContainer pdc = meta.getPersistentDataContainer();
@@ -64,7 +66,7 @@ public class ToolListener implements Listener {
         }
 
         // restrict breaking inside spheres unless allowed
-        if (insideSphere && !bypass && !pluginTool) {
+        if (insideSphere && !bypass && !allowed) {
             event.setCancelled(true);
             if (debug) {
                 plugin.getLogger().info("[ToolListener] Cancelled: block not allowed inside sphere");
@@ -129,23 +131,21 @@ public class ToolListener implements Listener {
         player.updateInventory();
     }
 
-    private boolean canDestroy(ItemStack tool, Block block) {
+    private boolean isPluginTool(ItemStack tool) {
         if (tool.getType() == Material.AIR || !tool.hasItemMeta()) {
-
             return false;
         }
         ItemMeta meta = tool.getItemMeta();
+        return meta.getPersistentDataContainer().has(toolKey, PersistentDataType.BYTE);
+    }
 
-        // Only allow tools created by this plugin
-        if (!meta.getPersistentDataContainer().has(toolKey, PersistentDataType.BYTE)) {
+    private boolean canDestroy(ItemStack tool, Block block) {
+        ItemMeta meta = tool.getItemMeta();
+        if (meta == null) {
             return false;
         }
-
         var canDestroy = meta.getCanDestroy();
-        if (canDestroy == null || canDestroy.isEmpty()) {
-            return false;
-        }
-        return canDestroy.contains(block.getType());
+        return canDestroy == null || canDestroy.isEmpty() || canDestroy.contains(block.getType());
     }
 
 }

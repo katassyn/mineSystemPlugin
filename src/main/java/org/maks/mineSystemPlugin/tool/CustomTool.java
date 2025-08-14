@@ -92,6 +92,9 @@ public final class CustomTool {
             return; // not a custom tool managed by this plugin
         }
 
+        // capture CanDestroy before modifying meta so we can restore it later
+        var canDestroy = meta.getCanDestroy();
+
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
 
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
@@ -130,7 +133,6 @@ public final class CustomTool {
         }
 
         // preserve CanDestroy values when reapplying meta
-        var canDestroy = meta.getCanDestroy();
         if (canDestroy != null && !canDestroy.isEmpty()) {
             meta.setCanDestroy(new HashSet<>(canDestroy));
         }
@@ -226,6 +228,8 @@ public final class CustomTool {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return false;
 
+        var canDestroy = meta.getCanDestroy();
+
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         NamespacedKey maxKey = new NamespacedKey(plugin, "max_durability");
         NamespacedKey curKey = new NamespacedKey(plugin, "durability");
@@ -249,7 +253,6 @@ public final class CustomTool {
         meta.setLore(lore);
 
         // ensure CanDestroy is preserved when setting meta
-        var canDestroy = meta.getCanDestroy();
         if (canDestroy != null && !canDestroy.isEmpty()) {
             meta.setCanDestroy(new HashSet<>(canDestroy));
         }

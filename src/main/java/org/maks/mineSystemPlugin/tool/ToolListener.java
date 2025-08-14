@@ -125,13 +125,11 @@ public class ToolListener implements Listener {
         }
         if (broken) {
             player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
-        } else {
-            player.getInventory().setItemInMainHand(tool);
         }
+        player.updateInventory();
         if (debug) {
             plugin.getLogger().info("[ToolListener] Final state: " + (event.isCancelled() ? "cancelled" : "allowed"));
         }
-        player.updateInventory();
     }
 
     private boolean isPluginTool(ItemStack tool) {

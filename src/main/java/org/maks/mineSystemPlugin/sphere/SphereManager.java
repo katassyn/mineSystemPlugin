@@ -323,6 +323,7 @@ public class SphereManager {
                 int selectId = schematic.getName().equals("special1.schem") ? 61 : 62;
                 Location bossLoc = findDiamondBlockAtLevel(region, origin.getWorld(), teleport.getBlockY() - 1);
                 if (bossLoc != null) {
+                    plugin.getLogger().info("[SphereManager] Spawning NPC " + selectId + " at " + bossLoc);
                     Location npcLoc = bossLoc;
 
                     Location finalOrigin1 = origin;
@@ -336,6 +337,8 @@ public class SphereManager {
 
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
                     }, 60L);
+                } else {
+                    plugin.getLogger().warning("[SphereManager] Diamond block not found; NPC will not spawn");
                 }
             }
             return true;
@@ -590,13 +593,16 @@ public class SphereManager {
                     continue;
                 }
                 Block ground = world.getBlockAt(x, groundY, z);
-                Block space = world.getBlockAt(x, groundY + 1, z);
-                if (ground.getType() == Material.DIAMOND_BLOCK && space.getType() == Material.AIR) {
+                if (ground.getType() == Material.DIAMOND_BLOCK) {
+                    Block space = world.getBlockAt(x, groundY + 1, z);
+                    if (space.getType() != Material.AIR) {
+                        plugin.getLogger().info("[SphereManager] Diamond block found but space above is " + space.getType());
+                    }
                     return new Location(world, x + 0.5, groundY + 1, z + 0.5);
                 }
-
             }
         }
+        plugin.getLogger().info("[SphereManager] No diamond block located at Y=" + groundY);
         return null;
     }
 

@@ -1,6 +1,8 @@
 package org.maks.mineSystemPlugin.tool;
 
 import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Set;
 
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -24,6 +26,23 @@ public class ToolListener implements Listener {
     private final MineSystemPlugin plugin;
     private final boolean debug;
     private final NamespacedKey toolKey;
+
+    // Fallback list of blocks that any plugin pickaxe is allowed to break
+    // inside a sphere. This mirrors the CanBreak lists defined for the tools in
+    // itemy.md so durability can still update even if the underlying item
+    // metadata lacks CanDestroy entries.
+    private static final Set<Material> DEFAULT_CAN_DESTROY = EnumSet.of(
+            Material.COAL_ORE,
+            Material.IRON_ORE,
+            Material.LAPIS_ORE,
+            Material.REDSTONE_ORE,
+            Material.GOLD_ORE,
+            Material.EMERALD_ORE,
+            Material.DIAMOND_ORE,
+            Material.AMETHYST_BLOCK,
+            Material.MOSS_BLOCK,
+            Material.BONE_BLOCK
+    );
 
     public ToolListener(MineSystemPlugin plugin) {
         this.plugin = plugin;
@@ -70,7 +89,10 @@ public class ToolListener implements Listener {
                 PersistentDataContainer pdc = meta.getPersistentDataContainer();
                 plugin.getLogger().info(
                     "[ToolListener] hasCustomToolKey=" + pdc.has(toolKey, PersistentDataType.BYTE));
-                plugin.getLogger().info("[ToolListener] canDestroy=" + meta.getCanDestroy());
+                var metaCanDestroy = meta.getCanDestroy();
+                plugin.getLogger().info("[ToolListener] canDestroy=" + metaCanDestroy
+                        + (metaCanDestroy == null || metaCanDestroy.isEmpty() ? " (using defaults)" : ""));
+
             }
         }
 
@@ -152,11 +174,16 @@ public class ToolListener implements Listener {
 
     private boolean canDestroy(ItemStack tool, Block block) {
         ItemMeta meta = tool.getItemMeta();
-        if (meta == null) {
-            return false;
+        Material type = block.getType();
+        if (meta != null) {
+            var canDestroy = meta.getCanDestroy();
+            if (canDestroy != null && !canDestroy.isEmpty()) {
+                return canDestroy.contains(type);
+            }
         }
-        var canDestroy = meta.getCanDestroy();
-        return canDestroy != null && canDestroy.contains(block.getType());
+        // If the item metadata does not expose a CanDestroy list, fall back to
+        // the predefined set so that configured pickaxes still function.
+        return DEFAULT_CAN_DESTROY.contains(type);
 
     }
 

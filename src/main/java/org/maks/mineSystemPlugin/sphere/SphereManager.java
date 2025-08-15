@@ -145,8 +145,9 @@ public class SphereManager {
         this.stamina = stamina;
         this.sphereRepository = sphereRepository;
         this.maxSpheres = 20;
+        // Debug logging can be enabled via configuration. Default is off.
         this.debug = plugin instanceof MineSystemPlugin mine
-                && mine.getConfig().getBoolean("debug.toolListener", false);
+                && mine.getConfig().getBoolean("debug.sphereManager", false);
     }
 
     /**

@@ -88,6 +88,7 @@ Toggle various debug logs:
 ```yaml
 debug:
   toolListener: false
+  sphereManager: false
 ```
 
 

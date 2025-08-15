@@ -145,8 +145,21 @@ public class SphereManager {
         this.stamina = stamina;
         this.sphereRepository = sphereRepository;
         this.maxSpheres = 20;
+        // Debug logging can be enabled via configuration. Default is off.
         this.debug = plugin instanceof MineSystemPlugin mine
-                && mine.getConfig().getBoolean("debug.toolListener", false);
+                && mine.getConfig().getBoolean("debug.sphereManager", false);
+    }
+
+    private void debugInfo(String message) {
+        if (debug) {
+            plugin.getLogger().info("[SphereManager] " + message);
+        }
+    }
+
+    private void debugWarn(String message) {
+        if (debug) {
+            plugin.getLogger().warning("[SphereManager] " + message);
+        }
     }
 
     /**
@@ -310,11 +323,11 @@ public class SphereManager {
             Region finalRegion = region;
             Location finalOrigin = origin;
             String schemName = schematic.getName();
-            plugin.getLogger().info("[SphereManager] Scheduling teleport and mob spawn for " + schemName);
+            debugInfo("Scheduling teleport and mob spawn for " + schemName);
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 player.teleport(teleport);
                 handleMove(player, teleport);
-                plugin.getLogger().info("[SphereManager] Running mob spawn for " + schemName);
+                debugInfo("Running mob spawn for " + schemName);
                 spawnConfiguredMobs(schemName, finalRegion, finalOrigin.getWorld(), player);
             }, 40L);
 
@@ -325,7 +338,7 @@ public class SphereManager {
                 // not just at the player's ground level.
                 Location bossLoc = findDiamondBlock(region, origin.getWorld());
                 if (bossLoc != null) {
-                    plugin.getLogger().info("[SphereManager] Spawning NPC " + selectId + " at " + bossLoc);
+                    debugInfo("Spawning NPC " + selectId + " at " + bossLoc);
                     Location npcLoc = bossLoc;
 
                     Location finalOrigin1 = origin;
@@ -340,7 +353,7 @@ public class SphereManager {
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
                     }, 60L);
                 } else {
-                    plugin.getLogger().warning("[SphereManager] Diamond block not found; NPC will not spawn");
+                    debugWarn("Diamond block not found; NPC will not spawn");
                 }
             }
             return true;
@@ -504,10 +517,10 @@ public class SphereManager {
                                      Player player) {
 
         String key = "mobs." + schematic.replace(".", "\\.");
-        plugin.getLogger().info("[SphereManager] Loading mob config at key: " + key);
+        debugInfo("Loading mob config at key: " + key);
         List<Map<?, ?>> entries = ((JavaPlugin) plugin).getConfig().getMapList(key);
         if (entries.isEmpty()) {
-            plugin.getLogger().warning("[SphereManager] No entries found via getMapList, attempting fallback");
+            debugWarn("No entries found via getMapList, attempting fallback");
             ConfigurationSection section = ((JavaPlugin) plugin).getConfig().getConfigurationSection("mobs");
             if (section != null) {
                 Object raw = section.get(schematic);
@@ -517,11 +530,11 @@ public class SphereManager {
                 }
             }
         }
-        plugin.getLogger().info("[SphereManager] Found " + entries.size() + " mob entries");
+        debugInfo("Found " + entries.size() + " mob entries");
         int playerY = player.getLocation().getBlockY();
         Location bossLoc = findDiamondBlockAtLevel(region, world, playerY - 1);
         if (bossLoc == null) {
-            plugin.getLogger().warning("[SphereManager] Diamond block not found at player level; boss will not spawn");
+            debugWarn("Diamond block not found at player level; boss will not spawn");
         }
 
         for (Map<?, ?> entry : entries) {
@@ -532,12 +545,12 @@ public class SphereManager {
             int amount = amtNum.intValue();
             Object bossObj = map.get("boss");
             boolean boss = bossObj != null && Boolean.parseBoolean(String.valueOf(bossObj));
-            plugin.getLogger().info("[SphereManager] Spawning " + amount + " of " + mythic + (boss ? " (boss)" : ""));
+            debugInfo("Spawning " + amount + " of " + mythic + (boss ? " (boss)" : ""));
             for (int i = 0; i < amount; i++) {
                 Location loc;
                 if (boss) {
                     if (bossLoc == null) {
-                        plugin.getLogger().warning("[SphereManager] Boss location missing; skipping spawn");
+                        debugWarn("Boss location missing; skipping spawn");
                         continue;
                     }
                     loc = bossLoc;
@@ -551,10 +564,10 @@ public class SphereManager {
                                 loc.getX(), loc.getY(), loc.getZ());
                 String cmd = String.format("mm m spawn %s 1 %s", mythic, locString);
                 if (loc != null && mythic != null) {
-                    plugin.getLogger().info("[SphereManager] Dispatching command: " + cmd);
+                    debugInfo("Dispatching command: " + cmd);
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
                 } else {
-                    plugin.getLogger().warning("[SphereManager] Missing location or mythic id for spawn, skipping. Intended command: " + cmd);
+                    debugWarn("Missing location or mythic id for spawn, skipping. Intended command: " + cmd);
                 }
             }
         }
@@ -598,13 +611,13 @@ public class SphereManager {
                 if (ground.getType() == Material.DIAMOND_BLOCK) {
                     Block space = world.getBlockAt(x, groundY + 1, z);
                     if (space.getType() != Material.AIR) {
-                        plugin.getLogger().info("[SphereManager] Diamond block found but space above is " + space.getType());
+                        debugInfo("Diamond block found but space above is " + space.getType());
                     }
                     return new Location(world, x + 0.5, groundY + 1, z + 0.5);
                 }
             }
         }
-        plugin.getLogger().info("[SphereManager] No diamond block located at Y=" + groundY);
+        debugInfo("No diamond block located at Y=" + groundY);
         return null;
     }
 
@@ -633,7 +646,7 @@ public class SphereManager {
                 }
             }
         }
-        plugin.getLogger().info("[SphereManager] No diamond block found anywhere in region");
+        debugInfo("No diamond block found anywhere in region");
 
         return null;
     }
@@ -664,7 +677,7 @@ public class SphereManager {
                 player.setGameMode(GameMode.SURVIVAL);
                 player.sendTitle(ChatColor.GOLD + sphere.getType().getDisplayName(), "", 10, 70, 20);
                 if (debug) {
-                    plugin.getLogger().info("[SphereManager] Set " + player.getName() + " to SURVIVAL inside sphere");
+                    debugInfo("Set " + player.getName() + " to SURVIVAL inside sphere");
                 }
             }
         } else {
@@ -677,7 +690,7 @@ public class SphereManager {
         if (prev != null) {
             player.setGameMode(prev);
             if (debug) {
-                plugin.getLogger().info("[SphereManager] Restored " + player.getName() + " to " + prev);
+                debugInfo("Restored " + player.getName() + " to " + prev);
             }
         }
     }

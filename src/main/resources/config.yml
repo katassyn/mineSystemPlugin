@@ -34,3 +34,4 @@ sell-prices:
 
 debug:
   toolListener: false
+  sphereManager: false

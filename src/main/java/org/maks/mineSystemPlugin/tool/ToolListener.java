@@ -46,9 +46,8 @@ public class ToolListener implements Listener {
 
     public ToolListener(MineSystemPlugin plugin) {
         this.plugin = plugin;
-        // Always enable debug output so durability problems can be traced even if
-        // the configuration flag is missing or set incorrectly.
-        this.debug = true;
+        // Debug output can be toggled through the configuration. Default is off.
+        this.debug = plugin.getConfig().getBoolean("debug.toolListener", false);
         this.toolKey = new NamespacedKey(plugin, "custom_tool");
     }
 

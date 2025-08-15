@@ -160,6 +160,7 @@ public class SphereManager {
         if (debug) {
             plugin.getLogger().warning("[SphereManager] " + message);
         }
+
     }
 
     /**

@@ -67,6 +67,7 @@ public class ToolListener implements Listener {
         CustomTool.ensureDurability(tool, plugin);
         player.getInventory().setItemInMainHand(tool);
 
+
         boolean wasCancelled = event.isCancelled();
         Block block = event.getBlock();
         boolean insideSphere = plugin.getSphereManager().isInsideSphere(block.getLocation());
@@ -82,6 +83,7 @@ public class ToolListener implements Listener {
                 plugin.getLogger().info("[ToolListener] Event was already cancelled before processing");
             }
             plugin.getLogger().info("[ToolListener] pluginTool=" + pluginTool + ", allowed=" + allowed + ", tool=" + tool.getType());
+
             ItemMeta meta = tool.getItemMeta();
             if (meta != null) {
                 PersistentDataContainer pdc = meta.getPersistentDataContainer();
@@ -90,6 +92,7 @@ public class ToolListener implements Listener {
                 var metaCanDestroy = meta.getCanDestroy();
                 plugin.getLogger().info("[ToolListener] canDestroy=" + metaCanDestroy
                         + (metaCanDestroy == null || metaCanDestroy.isEmpty() ? " (using defaults)" : ""));
+
             }
         }
 
@@ -135,6 +138,7 @@ public class ToolListener implements Listener {
             }
         }
 
+
         boolean broken = CustomTool.damage(tool, plugin);
 
         if (debug) {
@@ -152,6 +156,7 @@ public class ToolListener implements Listener {
         } else {
             // write back updated durability to the player's inventory
             player.getInventory().setItemInMainHand(tool);
+
         }
         player.updateInventory();
         if (debug) {
@@ -179,6 +184,7 @@ public class ToolListener implements Listener {
         // If the item metadata does not expose a CanDestroy list, fall back to
         // the predefined set so that configured pickaxes still function.
         return DEFAULT_CAN_DESTROY.contains(type);
+
     }
 
 }

@@ -1,5 +1,6 @@
 package org.maks.mineSystemPlugin;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -16,6 +17,7 @@ import org.maks.mineSystemPlugin.command.LootCommand;
 import org.maks.mineSystemPlugin.command.MineCommand;
 import org.maks.mineSystemPlugin.command.SpecialLootCommand;
 import org.maks.mineSystemPlugin.command.StaminaCommand;
+import org.maks.mineSystemPlugin.command.StaminaDebugCommand;
 import org.maks.mineSystemPlugin.managers.PickaxeManager;
 import org.maks.mineSystemPlugin.stamina.StaminaManager;
 import org.maks.mineSystemPlugin.database.DatabaseManager;
@@ -51,6 +53,7 @@ import java.util.UUID;
 
 import org.bukkit.inventory.ItemStack;
 import org.maks.mineSystemPlugin.item.CustomItems;
+import me.clip.placeholderapi.PlaceholderAPI;
 
 /**
  * Main plugin entry point.
@@ -151,6 +154,7 @@ public final class MineSystemPlugin extends JavaPlugin {
         registerListener(ceCommand);
         getCommand("mine").setExecutor(new MineCommand(this, sphereManager));
         getCommand("stamin").setExecutor(new StaminaCommand(staminaManager));
+        getCommand("stamindebug").setExecutor(new StaminaDebugCommand(staminaManager, playerRepository));
         getCommand("spawnsphere").setExecutor(this);
 
         registerListener(new SpecialBlockListener(this));
@@ -292,11 +296,55 @@ public final class MineSystemPlugin extends JavaPlugin {
 
         int bonus = random.nextInt(3) + 1;
         for (int i = 0; i < bonus; i++) {
-            String rewardId = BONUS_ITEMS.get(random.nextInt(BONUS_ITEMS.size()));
+            String rewardId = selectOreRewardWithPetBonus(player);
             ItemStack reward = CustomItems.get(rewardId);
             if (reward != null) {
                 loc.getWorld().dropItemNaturally(loc, reward.clone());
             }
+        }
+    }
+
+    /**
+     * Select ore reward tier with ZOMBIE pet legendary/rare ore bonus
+     */
+    private String selectOreRewardWithPetBonus(Player player) {
+        double petOreChanceBonus = getPetLegendaryOreChance(player);
+
+        // Base weights: ore_I = 50%, ore_II = 30%, ore_III = 20%
+        double[] weights = {50.0, 30.0, 20.0};
+
+        // Apply pet bonus: increase tier II and III weights
+        if (petOreChanceBonus > 0) {
+            double bonusMultiplier = 1.0 + (petOreChanceBonus / 100.0);
+            weights[1] *= bonusMultiplier; // ore_II (rare)
+            weights[2] *= bonusMultiplier; // ore_III (legendary)
+        }
+
+        double total = weights[0] + weights[1] + weights[2];
+        double roll = random.nextDouble() * total;
+
+        if (roll < weights[0]) {
+            return "ore_I";
+        } else if (roll < weights[0] + weights[1]) {
+            return "ore_II";
+        } else {
+            return "ore_III";
+        }
+    }
+
+    /**
+     * Get ZOMBIE pet legendary ore chance bonus percentage
+     */
+    private double getPetLegendaryOreChance(Player player) {
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") == null) {
+            return 0.0;
+        }
+
+        String placeholder = PlaceholderAPI.setPlaceholders(player, "%petplugin_legendary_ore_chance%");
+        try {
+            return Double.parseDouble(placeholder);
+        } catch (NumberFormatException e) {
+            return 0.0;
         }
     }
 

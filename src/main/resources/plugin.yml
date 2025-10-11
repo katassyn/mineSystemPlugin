@@ -31,7 +31,11 @@ commands:
   stamin:
     description: Check your stamina
     usage: /stamin
+  stamindebug:
+    description: Debug stamina values
+    usage: /stamindebug <player> [reload|save]
+    permission: minesystem.admin
 permissions:
   minesystem.admin:
-    description: Bypass mining restrictions
+    description: Bypass mining restrictions and access debug commands
     default: op

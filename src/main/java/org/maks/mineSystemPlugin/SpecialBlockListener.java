@@ -82,9 +82,9 @@ public class SpecialBlockListener implements Listener {
         ItemStack tool = player.getInventory().getItemInMainHand();
         int dupLevel = CustomTool.getDuplicateLevel(tool, plugin);
         double chance = switch (dupLevel) {
-            case 1 -> 0.03;
-            case 2 -> 0.04;
-            case 3 -> 0.05;
+            case 1 -> 0.05;
+            case 2 -> 0.1;
+            case 3 -> 0.15;
             default -> 0.0;
         };
         boolean duplicate = Math.random() < chance;

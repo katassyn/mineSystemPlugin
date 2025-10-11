@@ -11,8 +11,8 @@ public enum SphereType {
     ORE("Ore", 45, "Ore Sphere"),
     TREASURE("Treasure", 11, "Treasure Sphere"),
     VEGETATION("Vegetation", 15, "Vegetation Sphere"),
-    MOB("Mob", 15, "Mob Sphere"),
-    BOSS("Boss", 3, "Boss Sphere"),
+    MOB("Mob", 17, "Mob Sphere"),
+    BOSS("Boss", 1, "Boss Sphere"),
     SPECIAL_EVENT("SpecialEvent", 5, "Special Sphere"),
     CRYSTAL_DUST("CrystalDust", 5, "Crystal Dust Sphere");
 

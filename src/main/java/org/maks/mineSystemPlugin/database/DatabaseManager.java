@@ -23,7 +23,8 @@ public class DatabaseManager {
         config.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + db);
         config.setUsername(cfg.getString("user", "root"));
         config.setPassword(cfg.getString("password", ""));
-        config.setMaximumPoolSize(10);
+        config.setMaximumPoolSize(20); // Increased for 30+ players - mining system operations
+        config.setMinimumIdle(8); // Lower priority plugin - basic connections
         config.setConnectionTestQuery("SELECT 1");
         this.dataSource = new HikariDataSource(config);
         initTables();

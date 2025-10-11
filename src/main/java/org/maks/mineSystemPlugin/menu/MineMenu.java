@@ -23,6 +23,8 @@ import org.maks.mineSystemPlugin.sphere.SphereManager;
  * by spending stamina or a premium sphere by redeeming a voucher.
  */
 public class MineMenu implements InventoryHolder, Listener {
+    private static final String PREMIUM_VOUCHER_NAME = "Premium Mine Voucher";
+
     private final JavaPlugin plugin;
     private final SphereManager sphereManager;
     private final Inventory inventory;
@@ -103,12 +105,14 @@ public class MineMenu implements InventoryHolder, Listener {
             }
         } else if (name.equalsIgnoreCase("Premium Mine")) {
             player.closeInventory();
-            if (consumeVoucher(player)) {
-                if (sphereManager.createSphere(player, true, "MineMenu")) {
-                    player.sendMessage(ChatColor.GREEN + "Premium sphere created!");
-                }
-            } else {
+            int voucherSlot = findVoucherSlot(player);
+            if (voucherSlot == -1) {
                 player.sendMessage(ChatColor.RED + "You need a Premium Mine Voucher to enter!");
+                return;
+            }
+            if (sphereManager.createSphere(player, true, "MineMenu")) {
+                consumeVoucherAt(player, voucherSlot);
+                player.sendMessage(ChatColor.GREEN + "Premium sphere created!");
             }
         } else if (name.equalsIgnoreCase("Sell Ores")) {
             player.closeInventory();
@@ -139,24 +143,39 @@ public class MineMenu implements InventoryHolder, Listener {
         }
     }
 
-    private boolean consumeVoucher(Player player) {
+    private int findVoucherSlot(Player player) {
         var inventory = player.getInventory();
         for (int slot = 0; slot < inventory.getSize(); slot++) {
             ItemStack stack = inventory.getItem(slot);
-            if (stack == null || stack.getType() != Material.POTATO) {
-                continue;
-            }
-            ItemMeta meta = stack.getItemMeta();
-            if (meta != null && ChatColor.stripColor(meta.getDisplayName()).equalsIgnoreCase("Premium Mine Voucher")) {
-                int amount = stack.getAmount();
-                if (amount > 1) {
-                    stack.setAmount(amount - 1);
-                } else {
-                    inventory.setItem(slot, null);
-                }
-                return true;
+            if (isVoucher(stack)) {
+                return slot;
             }
         }
-        return false;
+        return -1;
+    }
+
+    private void consumeVoucherAt(Player player, int slot) {
+        var inventory = player.getInventory();
+        ItemStack stack = inventory.getItem(slot);
+        if (!isVoucher(stack)) {
+            return;
+        }
+        int amount = stack.getAmount();
+        if (amount > 1) {
+            stack.setAmount(amount - 1);
+        } else {
+            inventory.setItem(slot, null);
+        }
+    }
+
+    private boolean isVoucher(ItemStack stack) {
+        if (stack == null || stack.getType() != Material.POTATO) {
+            return false;
+        }
+        ItemMeta meta = stack.getItemMeta();
+        if (meta == null || meta.getDisplayName() == null) {
+            return false;
+        }
+        return ChatColor.stripColor(meta.getDisplayName()).equalsIgnoreCase(PREMIUM_VOUCHER_NAME);
     }
 }

@@ -44,6 +44,13 @@ public class ToolListener implements Listener {
             Material.BONE_BLOCK
     );
 
+    // Special blocks that have their own custom drop logic in SpecialBlockListener
+    private static final Set<Material> SPECIAL_BLOCKS = EnumSet.of(
+            Material.AMETHYST_BLOCK,
+            Material.MOSS_BLOCK,
+            Material.BONE_BLOCK
+    );
+
     public ToolListener(MineSystemPlugin plugin) {
         this.plugin = plugin;
         // Debug output can be toggled through the configuration. Default is off.
@@ -66,7 +73,6 @@ public class ToolListener implements Listener {
         CustomTool.ensureDurability(tool, plugin);
         player.getInventory().setItemInMainHand(tool);
 
-
         boolean wasCancelled = event.isCancelled();
         Block block = event.getBlock();
         boolean insideSphere = plugin.getSphereManager().isInsideSphere(block.getLocation());
@@ -76,8 +82,8 @@ public class ToolListener implements Listener {
 
         if (debug) {
             plugin.getLogger().info(String.format(
-                "[ToolListener] %s tried to break %s at %s (initially cancelled=%s)",
-                player.getName(), block.getType(), block.getLocation(), wasCancelled));
+                    "[ToolListener] %s tried to break %s at %s (initially cancelled=%s)",
+                    player.getName(), block.getType(), block.getLocation(), wasCancelled));
             if (wasCancelled) {
                 plugin.getLogger().info("[ToolListener] Event was already cancelled before processing");
             }
@@ -87,11 +93,10 @@ public class ToolListener implements Listener {
             if (meta != null) {
                 PersistentDataContainer pdc = meta.getPersistentDataContainer();
                 plugin.getLogger().info(
-                    "[ToolListener] hasCustomToolKey=" + pdc.has(toolKey, PersistentDataType.BYTE));
+                        "[ToolListener] hasCustomToolKey=" + pdc.has(toolKey, PersistentDataType.BYTE));
                 var metaCanDestroy = meta.getCanDestroy();
                 plugin.getLogger().info("[ToolListener] canDestroy=" + metaCanDestroy
                         + (metaCanDestroy == null || metaCanDestroy.isEmpty() ? " (using defaults)" : ""));
-
             }
         }
 
@@ -108,35 +113,39 @@ public class ToolListener implements Listener {
             return;
         }
 
-        // duplicate drops
-        int dupLevel = CustomTool.getDuplicateLevel(tool, plugin);
-        if (dupLevel > 0) {
-            double chance = switch (dupLevel) {
-                case 1 -> 0.03;
-                case 2 -> 0.04;
-                case 3 -> 0.05;
-                default -> 0.0;
-            };
-            if (Math.random() < chance) {
-                Collection<ItemStack> drops = event.getBlock().getDrops(tool, player);
-                for (ItemStack drop : drops) {
-                    event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), drop);
+        // IMPORTANT: Skip duplicate drops for special blocks - they're handled in SpecialBlockListener
+        Material blockType = block.getType();
+        boolean isSpecialBlock = SPECIAL_BLOCKS.contains(blockType);
+
+        // duplicate drops (only for vanilla ores that are NOT custom ores and NOT special blocks)
+        if (!plugin.isCustomOre(blockType) && !isSpecialBlock) {
+            int dupLevel = CustomTool.getDuplicateLevel(tool, plugin);
+            if (dupLevel > 0) {
+                double chance = switch (dupLevel) {
+                    case 1 -> 0.05;
+                    case 2 -> 0.1;
+                    case 3 -> 0.15;
+                    default -> 0.0;
+                };
+                if (Math.random() < chance) {
+                    Collection<ItemStack> drops = event.getBlock().getDrops(tool, player);
+                    for (ItemStack drop : drops) {
+                        event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), drop);
+                    }
                 }
             }
         }
 
         // durability handling
-
         if (debug) {
             int[] before = CustomTool.getDurability(tool, plugin);
             if (before != null) {
                 plugin.getLogger().info(
-                    "[ToolListener] Durability before hit: " + before[0] + "/" + before[1]);
+                        "[ToolListener] Durability before hit: " + before[0] + "/" + before[1]);
             } else {
                 plugin.getLogger().info("[ToolListener] Durability data missing before hit");
             }
         }
-
 
         boolean broken = CustomTool.damage(tool, plugin);
 
@@ -144,19 +153,20 @@ public class ToolListener implements Listener {
             int[] after = CustomTool.getDurability(tool, plugin);
             if (after != null) {
                 plugin.getLogger().info(
-                    "[ToolListener] Durability after hit: " + after[0] + "/" + after[1]);
+                        "[ToolListener] Durability after hit: " + after[0] + "/" + after[1]);
             } else {
                 plugin.getLogger().info("[ToolListener] Durability data missing after hit");
             }
             plugin.getLogger().info("[ToolListener] Broken after hit: " + broken);
         }
+
         if (broken) {
             player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
         } else {
             // write back updated durability to the player's inventory
             player.getInventory().setItemInMainHand(tool);
-
         }
+
         player.updateInventory();
         if (debug) {
             plugin.getLogger().info("[ToolListener] Final state: " + (event.isCancelled() ? "cancelled" : "allowed"));
@@ -183,7 +193,5 @@ public class ToolListener implements Listener {
         // If the item metadata does not expose a CanDestroy list, fall back to
         // the predefined set so that configured pickaxes still function.
         return DEFAULT_CAN_DESTROY.contains(type);
-
     }
-
 }

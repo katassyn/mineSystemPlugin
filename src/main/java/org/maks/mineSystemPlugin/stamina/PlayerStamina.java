@@ -11,7 +11,9 @@ public class PlayerStamina {
     private Instant firstUsage;
 
     public PlayerStamina(int maxStamina) {
-        this.stamina = maxStamina;
+        // NIE ustawiamy staminy na 0 - będzie ustawiona przez StaminaManager
+        // na podstawie danych z bazy lub na max dla nowych graczy
+        this.stamina = -1; // -1 oznacza "nie zainicjalizowana"
         this.maxStamina = maxStamina;
     }
 
@@ -37,5 +39,12 @@ public class PlayerStamina {
 
     public void setFirstUsage(Instant firstUsage) {
         this.firstUsage = firstUsage;
+    }
+
+    /**
+     * Checks if stamina has been initialized from database or set to default
+     */
+    public boolean isInitialized() {
+        return stamina >= 0;
     }
 }

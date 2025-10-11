@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Handles stamina usage and timed resets for players.
@@ -48,15 +49,58 @@ public class StaminaManager {
 
     private PlayerStamina getData(UUID uuid) {
         PlayerStamina ps = staminaMap.computeIfAbsent(uuid, id -> {
-            PlayerStamina s = new PlayerStamina(calculateMaxStamina(id));
-            playerRepository.load(id).join().ifPresent(data -> {
-                s.setStamina(data.stamina());
-                if (data.resetTimestamp() > 0) {
-                    s.setFirstUsage(Instant.ofEpochMilli(data.resetTimestamp()));
+            int maxStamina = calculateMaxStamina(id);
+            PlayerStamina s = new PlayerStamina(maxStamina);
+
+            // Ważne: najpierw próbujemy załadować z bazy
+            boolean dataLoaded = false;
+            try {
+                var futureData = playerRepository.load(id);
+                var optionalData = futureData.join();
+
+                if (optionalData.isPresent()) {
+                    PlayerData data = optionalData.get();
+                    plugin.getLogger().info("Loading stamina for player " + id + ": " + data.stamina() + "/" + maxStamina);
+
+                    // Ustawiamy wartość z bazy danych
+                    s.setStamina(data.stamina());
+
+                    // Ustawiamy timestamp resetu jeśli istnieje
+                    if (data.resetTimestamp() > 0) {
+                        s.setFirstUsage(Instant.ofEpochMilli(data.resetTimestamp()));
+
+                        // Sprawdzamy czy minął czas resetu
+                        Instant now = Instant.now();
+                        Instant resetTime = s.getFirstUsage().plus(resetAfter);
+                        if (now.isAfter(resetTime)) {
+                            plugin.getLogger().info("Reset time passed for " + id + ", resetting stamina to max");
+                            s.setStamina(maxStamina);
+                            s.setFirstUsage(null);
+                            // Zapisz zaktualizowane dane
+                            playerRepository.save(new PlayerData(id, s.getStamina(), 0L));
+                        }
+                    }
+                    dataLoaded = true;
+                } else {
+                    plugin.getLogger().info("No data found for player " + id + " in database");
                 }
-            });
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to load stamina for player " + id + ": " + e.getMessage());
+                e.printStackTrace();
+            }
+
+            // Tylko jeśli NIE udało się załadować danych, traktuj jako nowego gracza
+            if (!dataLoaded) {
+                plugin.getLogger().info("Treating " + id + " as new player, setting full stamina: " + maxStamina);
+                s.setStamina(maxStamina);
+                // Zapisz nowego gracza do bazy
+                playerRepository.save(new PlayerData(id, s.getStamina(), 0L));
+            }
+
             return s;
         });
+
+        // Aktualizuj max stamina jeśli się zmieniła (np. przez questy)
         int max = calculateMaxStamina(uuid);
         if (ps.getMaxStamina() != max) {
             ps.setMaxStamina(max);
@@ -73,14 +117,18 @@ public class StaminaManager {
             public void run() {
                 Instant now = Instant.now();
                 staminaMap.forEach((uuid, ps) -> {
-                    if (ps.getFirstUsage() != null && now.isAfter(ps.getFirstUsage().plus(resetAfter))) {
-                        ps.setStamina(ps.getMaxStamina());
-                        ps.setFirstUsage(null);
-                        Player p = Bukkit.getPlayer(uuid);
-                        if (p != null) {
-                            p.sendMessage("Your stamina has been refreshed.");
+                    if (ps.getFirstUsage() != null) {
+                        Instant resetTime = ps.getFirstUsage().plus(resetAfter);
+                        if (now.isAfter(resetTime)) {
+                            plugin.getLogger().info("Resetting stamina for " + uuid + " (timer expired)");
+                            ps.setStamina(ps.getMaxStamina());
+                            ps.setFirstUsage(null);
+                            Player p = Bukkit.getPlayer(uuid);
+                            if (p != null) {
+                                p.sendMessage("Your stamina has been refreshed.");
+                            }
+                            playerRepository.save(new PlayerData(uuid, ps.getStamina(), 0L));
                         }
-                        playerRepository.save(new PlayerData(uuid, ps.getStamina(), 0L));
                     }
                 });
             }
@@ -114,11 +162,15 @@ public class StaminaManager {
 
     public void deductStamina(UUID uuid, int amount) {
         PlayerStamina ps = getData(uuid);
-        if (ps.getFirstUsage() == null) {
+        if (ps.getFirstUsage() == null && amount > 0) {
             ps.setFirstUsage(Instant.now());
+            plugin.getLogger().info("Starting stamina timer for " + uuid);
         }
-        ps.setStamina(Math.max(0, ps.getStamina() - amount));
+        int newStamina = Math.max(0, ps.getStamina() - amount);
+        ps.setStamina(newStamina);
         long reset = ps.getFirstUsage() == null ? 0L : ps.getFirstUsage().toEpochMilli();
+
+        plugin.getLogger().info("Deducting " + amount + " stamina from " + uuid + ", new value: " + newStamina);
         playerRepository.save(new PlayerData(uuid, ps.getStamina(), reset));
     }
 
@@ -129,13 +181,26 @@ public class StaminaManager {
         PlayerStamina ps = getData(uuid);
         ps.setStamina(ps.getMaxStamina());
         ps.setFirstUsage(null);
+        plugin.getLogger().info("Refilling stamina for " + uuid + " to max: " + ps.getMaxStamina());
         playerRepository.save(new PlayerData(uuid, ps.getStamina(), 0L));
     }
 
     public void saveAll() {
+        plugin.getLogger().info("Saving all stamina data...");
         staminaMap.forEach((uuid, ps) -> {
             long reset = ps.getFirstUsage() == null ? 0L : ps.getFirstUsage().toEpochMilli();
+            plugin.getLogger().info("Saving stamina for " + uuid + ": " + ps.getStamina() + ", reset: " + reset);
             playerRepository.save(new PlayerData(uuid, ps.getStamina(), reset));
         });
+    }
+
+    /**
+     * Force reload stamina data from database for a specific player.
+     * Useful for debugging or after manual database changes.
+     */
+    public void reloadPlayerData(UUID uuid) {
+        plugin.getLogger().info("Reloading stamina data for " + uuid);
+        staminaMap.remove(uuid);
+        getData(uuid); // This will force reload from database
     }
 }

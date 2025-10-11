@@ -8,6 +8,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.entity.Player;
+import me.clip.placeholderapi.PlaceholderAPI;
 import org.maks.mineSystemPlugin.MineSystemPlugin;
 import org.maks.mineSystemPlugin.events.OreMinedEvent;
 import org.maks.mineSystemPlugin.item.CustomItems;
@@ -67,14 +68,18 @@ public class BlockBreakListener implements Listener {
         event.setDropItems(false);
 
         int dupLevel = CustomTool.getDuplicateLevel(tool, plugin);
-        double chance = switch (dupLevel) {
-            case 1 -> 0.03;
-            case 2 -> 0.04;
-            case 3 -> 0.05;
+        double baseChance = switch (dupLevel) {
+            case 1 -> 0.05;
+            case 2 -> 0.1;
+            case 3 -> 0.15;
             default -> 0.0;
         };
 
-        boolean duplicate = Math.random() < chance;
+        // Add pet duplication bonuses
+        double petDuplicationChance = getPetOreDuplicationChance(player);
+        double totalChance = baseChance + (petDuplicationChance / 100.0);
+
+        boolean duplicate = Math.random() < totalChance;
         ItemStack drop = CustomItems.get(oreId);
         if (drop != null) {
             block.getWorld().dropItemNaturally(block.getLocation(), drop);
@@ -88,5 +93,21 @@ public class BlockBreakListener implements Listener {
         int amount = drop == null ? 0 : (duplicate ? drop.getAmount() * 2 : drop.getAmount());
         int pickaxeLevel = CustomTool.getToolLevel(tool);
         Bukkit.getPluginManager().callEvent(new OreMinedEvent(player, oreType, amount, pickaxeLevel));
+    }
+
+    /**
+     * Get CREEPER pet ore duplication chance percentage
+     */
+    private double getPetOreDuplicationChance(Player player) {
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") == null) {
+            return 0.0;
+        }
+
+        String placeholder = PlaceholderAPI.setPlaceholders(player, "%petplugin_ore_duplication_chance%");
+        try {
+            return Double.parseDouble(placeholder);
+        } catch (NumberFormatException e) {
+            return 0.0;
+        }
     }
 }

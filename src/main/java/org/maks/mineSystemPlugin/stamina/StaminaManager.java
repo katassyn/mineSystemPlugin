@@ -10,10 +10,13 @@ import org.maks.mineSystemPlugin.model.PlayerData;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 
 /**
  * Handles stamina usage and timed resets for players.
@@ -22,6 +25,7 @@ public class StaminaManager {
     private final MineSystemPlugin plugin;
     private final int baseMaxStamina;
     private final Map<UUID, PlayerStamina> staminaMap = new ConcurrentHashMap<>();
+    private final Map<UUID, CompletableFuture<Void>> saveQueue = new ConcurrentHashMap<>();
     private final Duration resetAfter;
     private final QuestRepository questRepository;
     private final PlayerRepository playerRepository;
@@ -77,7 +81,7 @@ public class StaminaManager {
                             s.setStamina(maxStamina);
                             s.setFirstUsage(null);
                             // Zapisz zaktualizowane dane
-                            playerRepository.save(new PlayerData(id, s.getStamina(), 0L));
+                            queueSave(id, s);
                         }
                     }
                     dataLoaded = true;
@@ -94,7 +98,7 @@ public class StaminaManager {
                 plugin.getLogger().info("Treating " + id + " as new player, setting full stamina: " + maxStamina);
                 s.setStamina(maxStamina);
                 // Zapisz nowego gracza do bazy
-                playerRepository.save(new PlayerData(id, s.getStamina(), 0L));
+                queueSave(id, s);
             }
 
             return s;
@@ -127,7 +131,7 @@ public class StaminaManager {
                             if (p != null) {
                                 p.sendMessage("Your stamina has been refreshed.");
                             }
-                            playerRepository.save(new PlayerData(uuid, ps.getStamina(), 0L));
+                            queueSave(uuid, ps);
                         }
                     }
                 });
@@ -168,10 +172,9 @@ public class StaminaManager {
         }
         int newStamina = Math.max(0, ps.getStamina() - amount);
         ps.setStamina(newStamina);
-        long reset = ps.getFirstUsage() == null ? 0L : ps.getFirstUsage().toEpochMilli();
 
         plugin.getLogger().info("Deducting " + amount + " stamina from " + uuid + ", new value: " + newStamina);
-        playerRepository.save(new PlayerData(uuid, ps.getStamina(), reset));
+        queueSave(uuid, ps);
     }
 
     /**
@@ -182,16 +185,20 @@ public class StaminaManager {
         ps.setStamina(ps.getMaxStamina());
         ps.setFirstUsage(null);
         plugin.getLogger().info("Refilling stamina for " + uuid + " to max: " + ps.getMaxStamina());
-        playerRepository.save(new PlayerData(uuid, ps.getStamina(), 0L));
+        queueSave(uuid, ps);
     }
 
     public void saveAll() {
         plugin.getLogger().info("Saving all stamina data...");
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
         staminaMap.forEach((uuid, ps) -> {
             long reset = ps.getFirstUsage() == null ? 0L : ps.getFirstUsage().toEpochMilli();
             plugin.getLogger().info("Saving stamina for " + uuid + ": " + ps.getStamina() + ", reset: " + reset);
-            playerRepository.save(new PlayerData(uuid, ps.getStamina(), reset));
+            futures.add(queueSave(uuid, ps));
         });
+        if (!futures.isEmpty()) {
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        }
     }
 
     /**
@@ -202,5 +209,34 @@ public class StaminaManager {
         plugin.getLogger().info("Reloading stamina data for " + uuid);
         staminaMap.remove(uuid);
         getData(uuid); // This will force reload from database
+    }
+
+    private CompletableFuture<Void> queueSave(UUID uuid, PlayerStamina ps) {
+        long reset = ps.getFirstUsage() == null ? 0L : ps.getFirstUsage().toEpochMilli();
+        PlayerData snapshot = new PlayerData(uuid, ps.getStamina(), reset);
+
+        CompletableFuture<Void> next = saveQueue.compute(uuid, (id, previous) -> {
+            CompletableFuture<Void> base = previous == null
+                    ? CompletableFuture.completedFuture(null)
+                    : previous;
+            CompletableFuture<Void> chained = base.handle((ignored, error) -> {
+                if (error != null) {
+                    plugin.getLogger().log(Level.WARNING,
+                            "Previous stamina save for " + id + " failed", error);
+                }
+                return null;
+            }).thenCompose(v -> playerRepository.save(snapshot));
+
+            chained.whenComplete((ignored, error) -> {
+                if (error != null) {
+                    plugin.getLogger().log(Level.WARNING,
+                            "Failed to save stamina data for " + id, error);
+                }
+                saveQueue.compute(id, (key, current) -> current == chained ? null : current);
+            });
+            return chained;
+        });
+
+        return next == null ? CompletableFuture.completedFuture(null) : next;
     }
 }

@@ -735,6 +735,25 @@ public class SphereManager {
                 Bukkit.getPluginManager().callEvent(
                         new SphereCompleteEvent(p, sphere.getType().name(), Map.of())
                 );
+
+                // Fire quest event for QuestSystem integration
+                try {
+                    Class<?> listenerClass = Class.forName("org.maks.questsystem.listeners.MineSystemListener");
+                    Class<?> eventClass = null;
+                    for (Class<?> innerClass : listenerClass.getDeclaredClasses()) {
+                        if (innerClass.getSimpleName().equals("SphereCompleteEvent")) {
+                            eventClass = innerClass;
+                            break;
+                        }
+                    }
+                    if (eventClass != null) {
+                        Object event = eventClass.getConstructor(Player.class, String.class)
+                                .newInstance(p, sphere.getType().name());
+                        Bukkit.getPluginManager().callEvent((org.bukkit.event.Event) event);
+                    }
+                } catch (Exception ignored) {
+                    // QuestSystem might not be loaded
+                }
             }
             sphere.remove();
             if ("special1.schem".equals(sphere.getSchematicName()) || "special2.schem".equals(sphere.getSchematicName())) {

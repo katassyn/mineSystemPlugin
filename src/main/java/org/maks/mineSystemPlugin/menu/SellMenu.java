@@ -11,6 +11,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import java.lang.reflect.Method;
 import java.util.Set;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -120,6 +121,9 @@ public class SellMenu implements InventoryHolder, Listener {
     private void sellItems(Player player) {
         double total = 0;
         String base = player.getWorld().getName();
+        boolean minerDayActive = isMinerDayActive();
+        double multiplier = minerDayActive ? 2.0 : 1.0;
+
         for (int i = 0; i < inventory.getSize(); i++) {
             if (i == SELL_SLOT || FILLER_SLOTS.contains(i)) {
                 continue;
@@ -139,15 +143,32 @@ public class SellMenu implements InventoryHolder, Listener {
             } else {
                 price = plugin.getConfig().getDouble("sell-prices." + base + "." + mat.name(), 0.0);
             }
-            total += price * item.getAmount();
+            total += price * item.getAmount() * multiplier;
             inventory.setItem(i, null);
         }
         inventory.setItem(SELL_SLOT, sellButton);
         if (total > 0) {
             economy.depositPlayer(player, total);
-            player.sendMessage(ChatColor.GREEN + "Sold ores for $" + total);
+            if (minerDayActive) {
+                player.sendMessage(ChatColor.GREEN + "Sold ores for $" + String.format("%.0f", total) + " " + ChatColor.GOLD + "(x2 Miner Day bonus!)");
+            } else {
+                player.sendMessage(ChatColor.GREEN + "Sold ores for $" + String.format("%.0f", total));
+            }
         } else {
             player.sendMessage(ChatColor.RED + "No ores to sell");
+        }
+    }
+
+    /**
+     * Check if miner_day event is active using EventPlugin API.
+     */
+    private boolean isMinerDayActive() {
+        try {
+            Class<?> apiClass = Class.forName("org.maks.eventPlugin.api.EventPluginAPI");
+            Method isActiveMethod = apiClass.getMethod("isEventActive", String.class);
+            return (boolean) isActiveMethod.invoke(null, "miner_day");
+        } catch (Exception e) {
+            return false;
         }
     }
 

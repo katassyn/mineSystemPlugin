@@ -32,6 +32,7 @@ import org.maks.mineSystemPlugin.sphere.SphereType;
 import org.maks.mineSystemPlugin.listener.BlockBreakListener;
 import org.maks.mineSystemPlugin.listener.BlockPlaceListener;
 import org.maks.mineSystemPlugin.listener.OreBreakListener;
+import org.maks.mineSystemPlugin.listener.MinerDayIntegrationListener;
 import org.maks.mineSystemPlugin.tool.ToolListener;
 import org.maks.mineSystemPlugin.listener.MinerElixirListener;
 import org.maks.mineSystemPlugin.SpecialBlockListener;
@@ -164,6 +165,7 @@ public final class MineSystemPlugin extends JavaPlugin {
         registerListener(new OreBreakListener(this));
         registerListener(new ToolListener(this));
         registerListener(new MinerElixirListener(staminaManager));
+        registerListener(new MinerDayIntegrationListener(this));
     }
 
     /**

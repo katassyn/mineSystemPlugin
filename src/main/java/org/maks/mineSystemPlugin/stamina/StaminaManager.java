@@ -8,6 +8,7 @@ import org.maks.mineSystemPlugin.repository.QuestRepository;
 import org.maks.mineSystemPlugin.repository.PlayerRepository;
 import org.maks.mineSystemPlugin.model.PlayerData;
 
+import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -161,10 +162,32 @@ public class StaminaManager {
     }
 
     public boolean hasStamina(UUID uuid, int amount) {
+        // During Miner Day event, stamina is unlimited
+        if (isMinerDayActive()) {
+            return true;
+        }
         return getStamina(uuid) >= amount;
     }
 
+    /**
+     * Check if miner_day event is active using EventPlugin API.
+     */
+    private boolean isMinerDayActive() {
+        try {
+            Class<?> apiClass = Class.forName("org.maks.eventPlugin.api.EventPluginAPI");
+            Method isActiveMethod = apiClass.getMethod("isEventActive", String.class);
+            return (boolean) isActiveMethod.invoke(null, "miner_day");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public void deductStamina(UUID uuid, int amount) {
+        // During Miner Day event, don't deduct stamina
+        if (isMinerDayActive()) {
+            return;
+        }
+
         PlayerStamina ps = getData(uuid);
         if (ps.getFirstUsage() == null && amount > 0) {
             ps.setFirstUsage(Instant.now());

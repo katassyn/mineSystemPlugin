@@ -157,8 +157,9 @@ public final class CustomTool {
     }
 
     /**
-     * Adds a custom Duplicate enchant. Levels correspond to 3%, 4% and 5% chance
-     * to drop an extra item. Lore is refreshed to follow the enchanted pickaxe
+     * Adds a custom Duplicate enchant. Levels correspond to:
+     * Level 1: 5%, Level 2: 10%, Level 3: 15%, Level 4: 22%, Level 5: 30%
+     * chance to drop an extra item. Lore is refreshed to follow the enchanted pickaxe
      * example from {@code itemy.md}.
      */
     public static void addDuplicate(Plugin plugin, ItemStack item, int level) {

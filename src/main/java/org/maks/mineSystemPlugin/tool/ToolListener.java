@@ -125,6 +125,8 @@ public class ToolListener implements Listener {
                     case 1 -> 0.05;
                     case 2 -> 0.1;
                     case 3 -> 0.15;
+                    case 4 -> 0.22;
+                    case 5 -> 0.30;
                     default -> 0.0;
                 };
                 if (Math.random() < chance) {

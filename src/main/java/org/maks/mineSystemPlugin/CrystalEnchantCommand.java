@@ -51,18 +51,21 @@ public class CrystalEnchantCommand implements CommandExecutor, Listener {
             return true;
         }
 
-        int cost = getCost(item.getType());
-        if (cost <= 0) {
+        int baseCost = getBaseCost(item.getType());
+        if (baseCost <= 0) {
             player.sendMessage(ChatColor.RED + "You must hold a valid pickaxe.");
             return true;
         }
 
-        openMenu(player, item, cost);
+        openSelectionMenu(player, item, baseCost);
         return true;
     }
 
-    private void openMenu(Player player, ItemStack tool, int cost) {
-        Inventory inv = Bukkit.createInventory(new EnchantMenu(tool, cost), 27, ChatColor.DARK_AQUA + "Crystal Enchants");
+    /**
+     * Opens the initial menu where player chooses between Basic and Powerful enchanting.
+     */
+    private void openSelectionMenu(Player player, ItemStack tool, int baseCost) {
+        Inventory inv = Bukkit.createInventory(new EnchantSelectionMenu(tool, baseCost), 27, ChatColor.DARK_AQUA + "Choose Enchanting Type");
 
         ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         ItemMeta fMeta = filler.getItemMeta();
@@ -72,14 +75,86 @@ public class CrystalEnchantCommand implements CommandExecutor, Listener {
             inv.setItem(i, filler);
         }
 
-        ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
+        // Basic Enchanting (tiers 1-3)
+        ItemStack basicBook = new ItemStack(Material.BOOK);
+        ItemMeta basicMeta = basicBook.getItemMeta();
+        basicMeta.setDisplayName(ChatColor.GREEN + "Basic Enchanting");
+        List<String> basicLore = new ArrayList<>();
+        basicLore.add(ChatColor.GRAY + "Cost: " + ChatColor.YELLOW + baseCost + " crystals");
+        basicLore.add("");
+        basicLore.add(ChatColor.GRAY + "Enchant tiers: " + ChatColor.WHITE + "I - III");
+        basicLore.add(ChatColor.GRAY + "Tier chances:");
+        basicLore.add(ChatColor.GRAY + "  • Tier I: " + ChatColor.WHITE + "70%");
+        basicLore.add(ChatColor.GRAY + "  • Tier II: " + ChatColor.WHITE + "25%");
+        basicLore.add(ChatColor.GRAY + "  • Tier III: " + ChatColor.WHITE + "5%");
+        basicLore.add("");
+        basicLore.add(ChatColor.YELLOW + "Click to select");
+        basicMeta.setLore(basicLore);
+        basicBook.setItemMeta(basicMeta);
+        inv.setItem(11, basicBook);
+
+        // Powerful Enchanting (tiers 3-5)
+        ItemStack powerfulBook = new ItemStack(Material.ENCHANTED_BOOK);
+        ItemMeta powerfulMeta = powerfulBook.getItemMeta();
+        powerfulMeta.setDisplayName(ChatColor.LIGHT_PURPLE + "Powerful Enchanting");
+        int powerfulCost = baseCost * 10;
+        List<String> powerfulLore = new ArrayList<>();
+        powerfulLore.add(ChatColor.GRAY + "Cost: " + ChatColor.YELLOW + powerfulCost + " crystals");
+        powerfulLore.add("");
+        powerfulLore.add(ChatColor.GRAY + "Enchant tiers: " + ChatColor.LIGHT_PURPLE + "III - V");
+        powerfulLore.add(ChatColor.GRAY + "Tier chances:");
+        powerfulLore.add(ChatColor.GRAY + "  • Tier III: " + ChatColor.WHITE + "70%");
+        powerfulLore.add(ChatColor.GRAY + "  • Tier IV: " + ChatColor.WHITE + "25%");
+        powerfulLore.add(ChatColor.GRAY + "  • Tier V: " + ChatColor.WHITE + "5%");
+        powerfulLore.add("");
+        powerfulLore.add(ChatColor.YELLOW + "Click to select");
+        powerfulMeta.setLore(powerfulLore);
+        powerfulBook.setItemMeta(powerfulMeta);
+        inv.setItem(15, powerfulBook);
+
+        // Cancel button
+        ItemStack barrier = new ItemStack(Material.BARRIER);
+        ItemMeta bMeta = barrier.getItemMeta();
+        bMeta.setDisplayName(ChatColor.RED + "Cancel");
+        barrier.setItemMeta(bMeta);
+        inv.setItem(22, barrier);
+
+        player.openInventory(inv);
+    }
+
+    /**
+     * Opens the confirmation menu for the selected enchanting type.
+     */
+    private void openConfirmMenu(Player player, ItemStack tool, int cost, boolean isPowerful) {
+        String title = isPowerful ? ChatColor.LIGHT_PURPLE + "Powerful Enchanting" : ChatColor.GREEN + "Basic Enchanting";
+        Inventory inv = Bukkit.createInventory(new EnchantConfirmMenu(tool, cost, isPowerful), 27, title);
+
+        ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemMeta fMeta = filler.getItemMeta();
+        fMeta.setDisplayName(" ");
+        filler.setItemMeta(fMeta);
+        for (int i = 0; i < inv.getSize(); i++) {
+            inv.setItem(i, filler);
+        }
+
+        ItemStack book = new ItemStack(isPowerful ? Material.ENCHANTED_BOOK : Material.BOOK);
         ItemMeta meta = book.getItemMeta();
-        meta.setDisplayName(ChatColor.GREEN + "Purchase Enchant");
+        meta.setDisplayName(ChatColor.GREEN + "Confirm Enchant");
         List<String> lore = new ArrayList<>();
-        lore.add(ChatColor.GRAY + "Cost: " + cost + " crystals");
+        lore.add(ChatColor.GRAY + "Cost: " + ChatColor.YELLOW + cost + " crystals");
+        lore.add("");
+        if (isPowerful) {
+            lore.add(ChatColor.LIGHT_PURPLE + "Powerful Enchanting");
+            lore.add(ChatColor.GRAY + "Tiers: III - V");
+        } else {
+            lore.add(ChatColor.GREEN + "Basic Enchanting");
+            lore.add(ChatColor.GRAY + "Tiers: I - III");
+        }
+        lore.add("");
         lore.add(ChatColor.GRAY + "Randomly grants Mining Speed");
-        lore.add(ChatColor.GRAY + "or Duplicate (10% both)");
-        lore.add(ChatColor.YELLOW + "Click to buy");
+        lore.add(ChatColor.GRAY + "or Duplicate (10% chance for both)");
+        lore.add("");
+        lore.add(ChatColor.YELLOW + "Click to purchase");
         meta.setLore(lore);
         book.setItemMeta(meta);
         inv.setItem(13, book);
@@ -95,32 +170,112 @@ public class CrystalEnchantCommand implements CommandExecutor, Listener {
 
     @EventHandler
     private void onInventoryClick(InventoryClickEvent event) {
-        if (!(event.getInventory().getHolder() instanceof EnchantMenu menu)) {
-            return;
-        }
-        event.setCancelled(true);
         if (!(event.getWhoClicked() instanceof Player player)) {
             return;
         }
 
-        ItemStack clicked = event.getCurrentItem();
-        if (clicked == null || clicked.getType() == Material.AIR) {
+        // Handle Selection Menu
+        if (event.getInventory().getHolder() instanceof EnchantSelectionMenu menu) {
+            event.setCancelled(true);
+            ItemStack clicked = event.getCurrentItem();
+            if (clicked == null || clicked.getType() == Material.AIR) {
+                return;
+            }
+
+            int slot = event.getSlot();
+            if (slot == 11) {
+                // Basic Enchanting selected
+                openConfirmMenu(player, menu.tool, menu.baseCost, false);
+            } else if (slot == 15) {
+                // Powerful Enchanting selected
+                int powerfulCost = menu.baseCost * 10;
+                openConfirmMenu(player, menu.tool, powerfulCost, true);
+            } else if (slot == 22) {
+                player.closeInventory();
+            }
             return;
         }
 
-        if (event.getSlot() == 13) {
-            if (!removeCrystals(player, menu.cost)) {
-                player.sendMessage(ChatColor.RED + "You need " + menu.cost + " crystals.");
+        // Handle Confirm Menu
+        if (event.getInventory().getHolder() instanceof EnchantConfirmMenu menu) {
+            event.setCancelled(true);
+            ItemStack clicked = event.getCurrentItem();
+            if (clicked == null || clicked.getType() == Material.AIR) {
                 return;
             }
-            List<EnchantType> enchants = chooseEnchantments();
-            applyEnchantments(menu.tool, enchants);
-            player.getInventory().setItemInMainHand(menu.tool);
-            player.updateInventory(); // opcjonalnie, aby odświeżyć ekwipunek
-            player.sendMessage(ChatColor.GREEN + "Pickaxe enchanted!");
-            player.closeInventory();
-        } else if (event.getSlot() == 22) {
-            player.closeInventory();
+
+            if (event.getSlot() == 13) {
+                if (!removeCrystals(player, menu.cost)) {
+                    player.sendMessage(ChatColor.RED + "You need " + menu.cost + " crystals.");
+                    return;
+                }
+                List<EnchantType> enchants = chooseEnchantments();
+                applyEnchantments(menu.tool, enchants, menu.isPowerful);
+                player.getInventory().setItemInMainHand(menu.tool);
+                player.updateInventory();
+                String typeMsg = menu.isPowerful ? "Powerful" : "Basic";
+                player.sendMessage(ChatColor.GREEN + "Pickaxe enchanted with " + typeMsg + " enchants!");
+                player.closeInventory();
+            } else if (event.getSlot() == 22) {
+                player.closeInventory();
+            }
+            return;
+        }
+
+        // Legacy support for old EnchantMenu (backward compatibility)
+        if (event.getInventory().getHolder() instanceof EnchantMenu menu) {
+            event.setCancelled(true);
+            ItemStack clicked = event.getCurrentItem();
+            if (clicked == null || clicked.getType() == Material.AIR) {
+                return;
+            }
+
+            if (event.getSlot() == 13) {
+                if (!removeCrystals(player, menu.cost)) {
+                    player.sendMessage(ChatColor.RED + "You need " + menu.cost + " crystals.");
+                    return;
+                }
+                List<EnchantType> enchants = chooseEnchantments();
+                applyEnchantments(menu.tool, enchants, false);
+                player.getInventory().setItemInMainHand(menu.tool);
+                player.updateInventory();
+                player.sendMessage(ChatColor.GREEN + "Pickaxe enchanted!");
+                player.closeInventory();
+            } else if (event.getSlot() == 22) {
+                player.closeInventory();
+            }
+        }
+    }
+
+    private static class EnchantSelectionMenu implements InventoryHolder {
+        private final ItemStack tool;
+        private final int baseCost;
+
+        EnchantSelectionMenu(ItemStack tool, int baseCost) {
+            this.tool = tool;
+            this.baseCost = baseCost;
+        }
+
+        @Override
+        public Inventory getInventory() {
+            return null;
+        }
+    }
+
+    private static class EnchantConfirmMenu implements InventoryHolder {
+        private final ItemStack tool;
+        private final int cost;
+        private final boolean isPowerful;
+
+        EnchantConfirmMenu(ItemStack tool, int cost, boolean isPowerful) {
+            this.tool = tool;
+            this.cost = cost;
+            this.isPowerful = isPowerful;
+        }
+
+        @Override
+        public Inventory getInventory() {
+            return null;
         }
     }
 
@@ -135,11 +290,11 @@ public class CrystalEnchantCommand implements CommandExecutor, Listener {
 
         @Override
         public Inventory getInventory() {
-            return null; // not used
+            return null;
         }
     }
 
-    private int getCost(Material material) {
+    private int getBaseCost(Material material) {
         return switch (material) {
             case WOODEN_PICKAXE -> 64;
             case STONE_PICKAXE -> 128;
@@ -170,16 +325,31 @@ public class CrystalEnchantCommand implements CommandExecutor, Listener {
         return result;
     }
 
-    private int randomLevel() {
+    /**
+     * Returns a random level for Basic enchanting (tiers 1-3).
+     * 70% for tier 1, 25% for tier 2, 5% for tier 3.
+     */
+    private int randomBasicLevel() {
         double roll = random.nextDouble();
         if (roll < 0.70) return 1;
         if (roll < 0.95) return 2;
         return 3;
     }
 
-    private void applyEnchantments(ItemStack item, List<EnchantType> enchantments) {
+    /**
+     * Returns a random level for Powerful enchanting (tiers 3-5).
+     * 70% for tier 3, 25% for tier 4, 5% for tier 5.
+     */
+    private int randomPowerfulLevel() {
+        double roll = random.nextDouble();
+        if (roll < 0.70) return 3;
+        if (roll < 0.95) return 4;
+        return 5;
+    }
+
+    private void applyEnchantments(ItemStack item, List<EnchantType> enchantments, boolean isPowerful) {
         for (EnchantType enchantment : enchantments) {
-            int level = randomLevel();
+            int level = isPowerful ? randomPowerfulLevel() : randomBasicLevel();
             switch (enchantment) {
                 case MINING_SPEED -> CustomTool.addMiningSpeed(plugin, item, level);
                 case DUPLICATE -> CustomTool.addDuplicate(plugin, item, level);

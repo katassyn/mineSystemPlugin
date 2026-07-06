@@ -162,16 +162,14 @@ public class StaminaManager {
     }
 
     public boolean hasStamina(UUID uuid, int amount) {
-        // During Miner Day event, stamina is unlimited
-        if (isMinerDayActive()) {
-            return true;
-        }
         return getStamina(uuid) >= amount;
     }
 
     /**
      * Check if miner_day event is active using EventPlugin API.
+     * NOTE: This method is currently unused but kept for future reference.
      */
+    @SuppressWarnings("unused")
     private boolean isMinerDayActive() {
         try {
             Class<?> apiClass = Class.forName("org.maks.eventPlugin.api.EventPluginAPI");
@@ -183,11 +181,6 @@ public class StaminaManager {
     }
 
     public void deductStamina(UUID uuid, int amount) {
-        // During Miner Day event, don't deduct stamina
-        if (isMinerDayActive()) {
-            return;
-        }
-
         PlayerStamina ps = getData(uuid);
         if (ps.getFirstUsage() == null && amount > 0) {
             ps.setFirstUsage(Instant.now());

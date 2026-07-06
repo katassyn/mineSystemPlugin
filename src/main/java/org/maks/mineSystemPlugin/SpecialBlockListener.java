@@ -34,7 +34,6 @@ public class SpecialBlockListener implements Listener {
         // Outside mining spheres the plugin should not interfere –
         // let the block break normally without any custom handling.
         if (!plugin.getSphereManager().isInsideSphere(loc)) {
-
             return;
         }
 
@@ -81,10 +80,14 @@ public class SpecialBlockListener implements Listener {
         // handle duplication enchant
         ItemStack tool = player.getInventory().getItemInMainHand();
         int dupLevel = CustomTool.getDuplicateLevel(tool, plugin);
+
+        // ZAKTUALIZOWANA SEKCJA: Dodano case 4 i 5
         double chance = switch (dupLevel) {
             case 1 -> 0.05;
             case 2 -> 0.1;
             case 3 -> 0.15;
+            case 4 -> 0.22; // Nowy Tier IV
+            case 5 -> 0.30; // Nowy Tier V
             default -> 0.0;
         };
         boolean duplicate = Math.random() < chance;
